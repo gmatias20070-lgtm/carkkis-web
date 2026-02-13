@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CARKKIS | Sistema Integral - Corregido</title>
+    <title>CARKKIS | Sistema Integral</title>
     <!-- Fuentes e Iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -31,13 +31,14 @@
         img { max-width: 100%; display: block; }
 
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; text-align: center; border: none; font-size: 0.9rem; }
+        .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; text-align: center; border: none; font-size: 0.9rem; transition: 0.3s; }
         .btn-primary { background-color: var(--azul-acento); color: var(--blanco); }
         .btn-primary:hover { background-color: var(--azul-oscuro); }
         .btn-primary:disabled { background-color: #cbd5e1; cursor: not-allowed; }
         .btn-danger { background-color: var(--peligro); color: white; }
         .btn-success { background-color: var(--exito); color: white; }
-        .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: var(--gris-texto); }
+        .btn-outline { background: transparent; border: 1px solid white; color: white; } /* Botón Registrarse */
+        .btn-outline:hover { background: rgba(255,255,255,0.1); }
         .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
         .btn-link { background: none; color: var(--azul-acento); padding: 0; text-decoration: underline; }
         
@@ -153,11 +154,20 @@
                     </ul>
                 </nav>
                 <div class="nav-actions">
+                    <!-- Carrito -->
                     <div class="cart-icon" onclick="window.openCartModal()">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-badge" id="cart-count">0</span>
                     </div>
-                    <button id="auth-btn" class="btn btn-primary" onclick="window.handleAuthClick()">Iniciar Sesión</button>
+                    
+                    <!-- Botones de Autenticación (Públicos) -->
+                    <div id="auth-buttons" style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="window.openLoginModal()">Iniciar Sesión</button>
+                        <button class="btn btn-outline" onclick="window.openRegisterModal()">Registrarse</button>
+                    </div>
+
+                    <!-- Botón de Logout (Solo visible cuando logueado) -->
+                    <button id="logout-btn" class="btn btn-danger hidden" onclick="window.logout()">Cerrar Sesión</button>
                 </div>
             </div>
         </header>
@@ -253,12 +263,26 @@
 
     <!-- MODALES -->
     <div id="loginModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2 style="text-align:center;">Iniciar Sesión</h2><div class="form-group"><label>Correo</label><input type="email" id="login-email" class="modal-input"></div><div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" class="modal-input"></div><button class="btn btn-primary" style="width:100%" onclick="window.handleLogin()">Ingresar</button><small>Admin: admin@carkkis.com / admin123</small></div></div>
-    <div id="registerModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2 style="text-align:center;">Crear Cuenta</h2><div class="form-group"><label>Nombre</label><input type="text" id="reg-name" class="modal-input"></div><div class="form-group"><label>Teléfono</label><input type="tel" id="reg-phone" class="modal-input"></div><div class="form-group"><label>Correo</label><input type="email" id="reg-email" class="modal-input"></div><div class="form-group"><label>Contraseña</label><input type="password" id="reg-pass" class="modal-input"></div><button class="btn btn-primary" style="width:100%" onclick="window.handleRegister()">Registrarse</button></div></div>
+    
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="window.closeModals()">&times;</span>
+            <h2 style="text-align:center; color: var(--azul-oscuro);">Crear Cuenta</h2>
+            <p style="text-align:center; font-size: 0.9rem; color: #666; margin-bottom: 20px;">Crea tu cuenta para poder comprar y agendar citas.</p>
+            <div class="form-group"><label>Nombre Completo</label><input type="text" id="reg-name" class="modal-input"></div>
+            <div class="form-group"><label>Teléfono</label><input type="tel" id="reg-phone" class="modal-input"></div>
+            <div class="form-group"><label>Correo Electrónico</label><input type="email" id="reg-email" class="modal-input"></div>
+            <div class="form-group"><label>Contraseña</label><input type="password" id="reg-pass" class="modal-input"></div>
+            <button class="btn btn-primary" style="width:100%" onclick="window.handleRegister()">Registrarse</button>
+            <div style="text-align:center; margin-top:10px;">¿Ya tienes cuenta? <a class="btn-link" onclick="window.openLoginModal()">Inicia Sesión</a></div>
+        </div>
+    </div>
+
     <div id="cartModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2>Finalizar Pedido</h2><div id="cart-items-container"><ul id="cart-items-list"></ul><div class="cart-total-display">Total: $<span id="cart-total-amount">0</span></div></div><div class="form-group"><label>Dirección (Bogotá) *</label><input type="text" id="order-address" class="modal-input"></div><div class="form-group"><label>Método de Pago *</label><select id="order-payment" class="modal-input"></select></div><div class="note-warning">Redirigido al pago tras confirmar.</div><button class="btn btn-primary" style="width:100%" onclick="window.confirmPurchase()">Confirmar</button></div></div>
     <div id="bookingModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2>Agendar Cita</h2><form onsubmit="window.submitBooking(event)"><div class="form-group"><label>Placa</label><input type="text" id="book-plate" class="modal-input" required></div><div class="form-group"><label>Servicio</label><select id="book-service" class="modal-input" required></select></div><div class="form-group"><label>Fecha</label><input type="date" id="book-date" class="modal-input" required></div><div class="form-group"><label>Hora</label><select id="book-time" class="modal-input" required></select></div><button type="submit" class="btn btn-primary" style="width:100%;">Agendar</button></form></div></div>
     <div id="toast-container"></div>
 
-    <!-- ================= LÓGICA JAVASCRIPT (FIREBASE CORREGIDO + RESET) ================= -->
+    <!-- ================= LÓGICA JAVASCRIPT (FIREBASE CORREGIDO) ================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -296,7 +320,6 @@
         let currentUser = null;
         let currentTab = 'analytics';
 
-        // --- FUNCION DE RESET ---
         window.resetDB = async () => {
             if(!confirm("ADVERTENCIA: ¿Estás seguro de RESETEAR la base de datos? Se perderán todos los pedidos y usuarios nuevos.")) return;
             try {
@@ -318,15 +341,13 @@
             try {
                 const snap = await get(ref(db, 'carkkis_products'));
                 if (!snap.exists()) {
-                    console.log("Inicializando base de datos por primera vez...");
+                    console.log("Inicializando base de datos...");
                     await set(ref(db, 'carkkis_products'), defaultData.products);
                     await set(ref(db, 'carkkis_services'), defaultData.services);
                     await set(ref(db, 'carkkis_users'), defaultData.users);
                     await set(ref(db, 'carkkis_payment_links'), defaultData.payment_links);
                     await set(ref(db, 'carkkis_orders'), null); 
                     await set(ref(db, 'carkkis_bookings'), null);
-                } else {
-                    console.log("Base de datos ya existe. Saltando inicialización.");
                 }
             } catch (e) { console.error("Error inicializando DB:", e); }
         }
@@ -335,37 +356,30 @@
             onValue(ref(db, 'carkkis_products'), (snap) => {
                 const rawData = snap.val();
                 const data = rawData ? Object.values(rawData) : [];
-                console.log("Productos recibidos:", data); // Log de depuración
                 window.renderPublicStore(data);
                 window.renderAdminProducts(rawData);
             });
-
             onValue(ref(db, 'carkkis_services'), (snap) => {
                 const rawData = snap.val();
                 const data = rawData ? Object.values(rawData) : [];
-                console.log("Servicios recibidos:", data);
                 window.renderPublicServices(data);
                 window.renderAdminServices(rawData);
             });
-
             onValue(ref(db, 'carkkis_bookings'), (snap) => {
                 const data = snap.val() ? Object.values(snap.val()) : [];
                 window.renderAdminBookings(data);
                 if(currentTab === 'analytics') loadAnalytics();
             });
-
             onValue(ref(db, 'carkkis_orders'), (snap) => {
                 const data = snap.val() ? Object.values(snap.val()) : [];
                 window.renderAdminSales(data);
                 loadProfits(data);
             });
-
             onValue(ref(db, 'carkkis_payment_links'), (snap) => {
                 window.paymentLinks = snap.val() || {};
             });
         }
 
-        // --- FUNCIONES EXPORTADAS A WINDOW ---
         window.showSection = (id) => {
             document.getElementById('home').classList.add('hidden');
             document.getElementById('store').classList.add('hidden');
@@ -394,6 +408,48 @@
             services.forEach(s => {
                 container.innerHTML += `<div class="product-card" onclick="window.selectService('${s.name}')"><div class="product-img"><i class="fas ${s.icon || 'fa-wrench'} fa-2x"></i></div><h3>${s.name}</h3><span class="product-price">$${(s.price || 0).toLocaleString()}</span></div>`;
             });
+        };
+
+        // --- LOGICA DE COMPRA (Requiere Login) ---
+        window.addToCart = async (id) => {
+            // VERIFICAR SI ESTÁ LOGUEADO
+            if (!currentUser) {
+                window.showToast('Debes iniciar sesión para comprar', 'error');
+                window.openLoginModal(); // Redirigir a login
+                return; 
+            }
+
+            const snap = await get(ref(db, 'carkkis_products'));
+            const rawData = snap.val();
+            const products = rawData ? Object.values(rawData) : [];
+            const p = products.find(x => x.id == id);
+            
+            if (p && p.stock > 0) {
+                cart.push(p);
+                document.getElementById('cart-count').innerText = cart.length;
+                window.showToast(`Agregado: ${p.name}`, 'success');
+            } else {
+                window.showToast('Producto agotado', 'error');
+            }
+        };
+
+        window.openBookingModal = () => {
+             // VERIFICAR SI ESTÁ LOGUEADO
+            if(!currentUser) { 
+                window.showToast('Debes iniciar sesión para agendar', 'error'); 
+                window.openLoginModal(); 
+                return; 
+            }
+            // Si está logueado, continua...
+            const select = document.getElementById('book-service');
+            if(select.innerHTML.trim() === '') {
+                get(ref(db, 'carkkis_services')).then(snap => {
+                    const rawData = snap.val();
+                    const s = rawData ? Object.values(rawData) : []; 
+                    s.forEach(x => { select.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
+                });
+            }
+            openModal('bookingModal');
         };
 
         window.renderAdminBookings = (data) => {
@@ -441,26 +497,11 @@
             }
         };
 
-        window.addToCart = async (id) => {
-            if (!currentUser) return showToast('Inicia sesión primero', 'error');
-            const snap = await get(ref(db, 'carkkis_products'));
-            const rawData = snap.val();
-            const products = rawData ? Object.values(rawData) : [];
-            const p = products.find(x => x.id == id);
-            if (p && p.stock > 0) {
-                cart.push(p);
-                document.getElementById('cart-count').innerText = cart.length;
-                showToast(`Agregado: ${p.name}`, 'success');
-            } else {
-                showToast('Producto agotado', 'error');
-            }
-        };
-
         window.confirmPurchase = async () => {
             const address = document.getElementById('order-address').value;
             const payment = document.getElementById('order-payment').value;
-            if (!address.toLowerCase().includes('bogota')) return showToast('Solo envíos a Bogotá', 'error');
-            if (!payment) return showToast('Selecciona pago', 'error');
+            if (!address.toLowerCase().includes('bogota')) return window.showToast('Solo envíos a Bogotá', 'error');
+            if (!payment) return window.showToast('Selecciona pago', 'error');
 
             const productsSnap = await get(ref(db, 'carkkis_products'));
             const products = productsSnap.val();
@@ -487,19 +528,21 @@
             if(url !== '#') window.open(url, '_blank');
 
             cart = []; document.getElementById('cart-count').innerText = '0'; window.closeModals();
-            showToast('Pedido registrado', 'success');
+            window.showToast('Pedido registrado', 'success');
         };
 
         window.submitBooking = async (e) => {
             e.preventDefault();
-            if(!currentUser) return showToast('Inicia sesión', 'error');
+            // Ya verificado en openBookingModal, pero doble check
+            if(!currentUser) return window.showToast('Inicia sesión', 'error');
+            
             const plate = document.getElementById('book-plate').value;
             const service = document.getElementById('book-service').value;
             const dateVal = document.getElementById('book-date').value;
             const timeVal = document.getElementById('book-time').value;
             
             const d = new Date(`${dateVal}T${timeVal}`);
-            if (d.getDay() === 0 || d.getDay() === 5 || d.getDay() === 6) return showToast('Solo Lun - Jue', 'error');
+            if (d.getDay() === 0 || d.getDay() === 5 || d.getDay() === 6) return window.showToast('Solo Lun - Jue', 'error');
 
             const newRef = push(ref(db, 'carkkis_bookings'));
             await set(newRef, {
@@ -512,10 +555,13 @@
                 service: service,
                 status: 'Pendiente'
             });
-            window.closeModals(); showToast('Cita agendada', 'success'); e.target.reset();
+            window.closeModals(); window.showToast('Cita agendada', 'success'); e.target.reset();
         };
 
-        window.handleAuthClick = () => currentUser ? window.logout() : openModal('loginModal');
+        // --- AUTH ---
+        window.openLoginModal = () => openModal('loginModal');
+        window.openRegisterModal = () => openModal('registerModal');
+
         window.handleLogin = async () => {
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-pass').value;
@@ -523,7 +569,7 @@
             const rawData = snap.val();
             const users = rawData ? Object.values(rawData) : [];
             const user = users.find(u => u.email === email && u.pass === pass);
-            if (user) { currentUser = user; loginSuccess(); } else { showToast('Credenciales inválidas', 'error'); }
+            if (user) { currentUser = user; loginSuccess(); } else { window.showToast('Credenciales inválidas', 'error'); }
         };
 
         window.handleRegister = async () => {
@@ -531,12 +577,12 @@
             const phone = document.getElementById('reg-phone').value;
             const email = document.getElementById('reg-email').value;
             const pass = document.getElementById('reg-pass').value;
-            if(!name || !phone || !email || !pass) return showToast('Datos incompletos', 'error');
+            if(!name || !phone || !email || !pass) return window.showToast('Datos incompletos', 'error');
             
             const snap = await get(ref(db, 'carkkis_users'));
             const rawData = snap.val();
             const users = rawData ? Object.values(rawData) : [];
-            if(users.find(u => u.email === email)) return showToast('Correo existe', 'error');
+            if(users.find(u => u.email === email)) return window.showToast('Correo existe', 'error');
 
             const newRef = push(ref(db, 'carkkis_users'));
             await set(newRef, { name, phone, email, pass, role: 'client' });
@@ -546,10 +592,12 @@
         };
 
         function loginSuccess() {
-            window.closeModals(); showToast(`Bienvenido, ${currentUser.name}`, 'success');
-            const btn = document.getElementById('auth-btn');
-            btn.innerText = "Cerrar Sesión"; btn.classList.remove('btn-primary'); btn.classList.add('btn-danger');
+            window.closeModals(); window.showToast(`Bienvenido, ${currentUser.name}`, 'success');
             
+            // Actualizar UI del Header
+            document.getElementById('auth-buttons').classList.add('hidden');
+            document.getElementById('logout-btn').classList.remove('hidden');
+
             if(currentUser.role === 'admin') {
                 document.getElementById('public-view').classList.add('hidden');
                 document.getElementById('admin-panel').style.display = 'block';
@@ -560,9 +608,12 @@
         window.logout = () => {
             currentUser = null; document.getElementById('admin-panel').style.display = 'none';
             document.getElementById('public-view').classList.remove('hidden');
-            const btn = document.getElementById('auth-btn');
-            btn.innerText = 'Iniciar Sesión'; btn.classList.remove('btn-danger'); btn.classList.add('btn-primary');
-            showToast('Sesión cerrada', 'info');
+            
+            // Actualizar UI del Header
+            document.getElementById('auth-buttons').classList.remove('hidden');
+            document.getElementById('logout-btn').classList.add('hidden');
+
+            window.showToast('Sesión cerrada', 'info');
         };
 
         window.switchAdminTab = (tab) => {
@@ -582,11 +633,11 @@
             const price = document.getElementById('new-prod-price').value;
             const stock = document.getElementById('new-prod-stock').value;
             const icon = document.getElementById('new-prod-icon').value || 'fa-box';
-            if(!name || !price) return showToast('Campos requeridos', 'error');
+            if(!name || !price) return window.showToast('Campos requeridos', 'error');
             
             const newRef = push(ref(db, 'carkkis_products'));
             set(newRef, { id: Date.now(), name, price: parseInt(price), stock: parseInt(stock || 10), icon });
-            showToast('Producto agregado', 'success');
+            window.showToast('Producto agregado', 'success');
             document.getElementById('new-prod-name').value = ''; 
             document.getElementById('new-prod-price').value = ''; 
             document.getElementById('new-prod-stock').value = ''; 
@@ -603,7 +654,7 @@
                 updates[`carkkis_products/${key}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
                 updates[`carkkis_products/${key}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
                 await update(ref(db), updates);
-                showToast('Producto actualizado', 'success');
+                window.showToast('Producto actualizado', 'success');
             }
         };
 
@@ -613,27 +664,27 @@
             const data = snap.val();
             const key = Object.keys(data).find(k => data[k].id == itemId);
             if(key) await remove(ref(db, `${path}/${key}`));
-            showToast('Eliminado', 'info');
+            window.showToast('Eliminado', 'info');
         };
 
         window.updateBookingStatus = async (key, status) => {
             await update(ref(db, `carkkis_bookings/${key}`), { status });
-            showToast('Estado actualizado', 'success');
+            window.showToast('Estado actualizado', 'success');
         };
 
         window.updateOrderStatus = async (key, status) => {
             await update(ref(db, `carkkis_orders/${key}`), { status });
-            showToast('Estado actualizado', 'success');
+            window.showToast('Estado actualizado', 'success');
         };
         
         window.addNewService = () => {
              const name = document.getElementById('new-serv-name').value;
              const price = document.getElementById('new-serv-price').value;
              const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
-             if(!name || !price) return showToast('Campos requeridos', 'error');
+             if(!name || !price) return window.showToast('Campos requeridos', 'error');
              const newRef = push(ref(db, 'carkkis_services'));
              set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
-             showToast('Servicio agregado', 'success');
+             window.showToast('Servicio agregado', 'success');
              document.getElementById('new-serv-name').value=''; document.getElementById('new-serv-price').value=''; document.getElementById('new-serv-icon').value='';
         };
 
@@ -646,7 +697,7 @@
                  updates[`carkkis_services/${key}/name`] = document.getElementById(`serv-name-${id}`).value;
                  updates[`carkkis_services/${key}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value);
                  await update(ref(db), updates);
-                 showToast('Servicio actualizado', 'success');
+                 window.showToast('Servicio actualizado', 'success');
             }
         };
 
@@ -654,8 +705,8 @@
         window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
         
         window.openCartModal = () => {
-            if (cart.length === 0) return showToast('Carrito vacío', 'info');
-            if (!currentUser) { showToast('Inicia sesión', 'error'); return openModal('loginModal'); }
+            if (cart.length === 0) return window.showToast('Carrito vacío', 'info');
+            if (!currentUser) { window.showToast('Inicia sesión', 'error'); return window.openLoginModal(); }
             const list = document.getElementById('cart-items-list'); list.innerHTML = ''; let total = 0;
             cart.forEach(i => { total += (i.price || 0); list.innerHTML += `<li><span>${i.name}</span><span>$${(i.price || 0).toLocaleString()}</span></li>`; });
             document.getElementById('cart-total-amount').innerText = total.toLocaleString();
@@ -670,19 +721,6 @@
             openModal('cartModal');
         };
 
-        window.openBookingModal = () => {
-            if(!currentUser) { showToast('Inicia sesión', 'error'); return openModal('loginModal'); }
-            const select = document.getElementById('book-service');
-            if(select.innerHTML.trim() === '') {
-                get(ref(db, 'carkkis_services')).then(snap => {
-                    const rawData = snap.val();
-                    const s = rawData ? Object.values(rawData) : []; 
-                    s.forEach(x => { select.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
-                });
-            }
-            openModal('bookingModal');
-        };
-
         window.selectService = (name) => {
             window.openBookingModal();
             setTimeout(() => document.getElementById('book-service').value = name, 100);
@@ -691,7 +729,7 @@
         window.renderTimeSlots = () => {};
 
         function loadAnalytics() {
-             document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Calculando analítica...</td></tr>';
+             document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Analítica disponible en versión Pro</td></tr>';
         }
 
         function loadProfits(orders) {
@@ -726,7 +764,6 @@
         }
 
         window.onload = () => {
-            console.log("Cargando aplicación...");
             seedData();
             setupListeners();
         };
