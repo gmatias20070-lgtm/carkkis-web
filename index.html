@@ -236,6 +236,15 @@
                 
                 <div id="view-payments" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Enlaces de Pago</h2>
+                    
+                    <!-- BOTÓN DE LIMPIEZA NUEVO -->
+                    <div style="margin-bottom: 15px;">
+                        <button class="btn btn-danger btn-sm" onclick="window.cleanUndefinedPayments()">
+                            <i class="fas fa-broom"></i> Limpiar Registros Vacíos
+                        </button>
+                        <small style="color: #64748b; margin-left: 10px;">Elimina automáticamente los ejemplos o datos corruptos.</small>
+                    </div>
+
                     <div class="note-warning" style="margin-bottom: 20px;">
                         Estos enlaces se mostrarán al cliente al finalizar un pedido.
                     </div>
@@ -333,7 +342,7 @@
                 <input type="tel" id="order-phone" class="modal-input" placeholder="Tu teléfono">
             </div>
             
-            <!-- CAMBIO AQUI: Selector de ciudades y dirección específica -->
+            <!-- CAMPOS DE DIRECCIÓN -->
             <div class="form-group">
                 <label>Ciudad de Envío *</label>
                 <select id="order-city" class="modal-input">
@@ -404,7 +413,7 @@
     </div>
     <div id="toast-container"></div>
 
-    <!-- ================= LÓGICA JAVASCRIPT (CORREGIDO) ================= -->
+    <!-- ================= LÓGICA JAVASCRIPT (FINAL CORREGIDO) ================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -559,7 +568,6 @@
                 let statusClass = o.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
                 let actions = o.status==='Pendiente'?`<button class="btn btn-success btn-sm" onclick="window.updateOrderStatus('${o.id}', 'Confirmado')"><i class="fas fa-check"></i></button> `:'';
                 actions += `<button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_orders', '${o.id}')"><i class="fas fa-trash"></i></button>`;
-                // Agregué o.address para ver la dirección en la tabla admin
                 tbody.innerHTML += `<tr><td>#${o.id.toString().slice(-4)}</td><td>${o.clientName}</td><td>${o.clientPhone || '-'}</td><td>${o.items}</td><td style="max-width: 150px; font-size: 0.8rem;">${o.address || '-'}</td><td>$${(o.total || 0).toLocaleString()}</td><td><span class="status-badge ${statusClass}">${o.status}</span></td><td>${actions}</td></tr>`;
             });
             const statSales = document.getElementById('stat-sales');
@@ -588,6 +596,7 @@
             }
         };
 
+        // --- FUNCIÓN PAGOS MEJORADA (LIMPIA VISUAL) ---
         window.renderAdminPayments = (rawData) => {
             const tbody = document.querySelector('#payments-table tbody');
             tbody.innerHTML = '';
@@ -598,17 +607,77 @@
             for (const key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
+                    // LIMPIZA VISUAL: No mostrar si no tiene nombre o enlace
+                    if(!p.name || !p.url) continue; 
+
                     tbody.innerHTML += `
                         <tr>
                             <td><input type="text" value="${p.name}" id="pay-name-${p.id}" class="admin-input"></td>
                             <td><input type="text" value="${p.url}" id="pay-url-${p.id}" class="admin-input" style="font-family: monospace;"></td>
                             <td>
-                                <button class="btn btn-success btn-sm" onclick="window.updatePayment('${key}', '${p.id}')"><i class="fas fa-save"></i></button> 
+                                <button class="btn btn-success btn-sm" onclick="window.updatePayment('${p.id}')"><i class="fas fa-save"></i></button> 
                                 <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_payment_links', '${p.id}')"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>`;
                 }
             }
+        };
+
+        // --- FUNCIÓN LIMPIAR DE BASE DE DATOS ---
+        window.cleanUndefinedPayments = async () => {
+            if(!confirm("¿Eliminar registros vacíos o corruptos?")) return;
+            const snap = await get(ref(db, 'carkkis_payment_links'));
+            const data = snap.val();
+            if (!data) return showToast("No hay datos para limpiar", "info");
+
+            let count = 0;
+            const updates = {};
+            
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    const p = data[key];
+                    // Si está vacío o undefined, marcamos para borrar
+                    if (!p.name || !p.url || p.name === "undefined" || p.url === "undefined") {
+                        updates[`carkkis_payment_links/${key}`] = null;
+                        count++;
+                    }
+                }
+            }
+
+            if (count > 0) {
+                await update(ref(db), updates);
+                showToast(`Se eliminaron ${count} registros basura`, "success");
+            } else {
+                showToast("No se encontraron registros vacíos", "info");
+            }
+        };
+
+        // --- FUNCIÓN ACTUALIZAR PAGOS CORREGIDA ---
+        window.updatePayment = async (id) => {
+            const snap = await get(ref(db, 'carkkis_payment_links'));
+            const data = snap.val();
+            
+            let firebaseKey = null;
+            for (const k in data) {
+                if (data[k].id == id) {
+                    firebaseKey = k;
+                    break;
+                }
+            }
+
+            if (!firebaseKey) return showToast('Error: No se encontró el pago en la base de datos', 'error');
+
+            const newName = document.getElementById(`pay-name-${id}`).value;
+            const newUrl = document.getElementById(`pay-url-${id}`).value;
+
+            if(!newName || !newUrl) return showToast('Nombre y URL son requeridos', 'error');
+
+            const updates = {};
+            updates[`carkkis_payment_links/${firebaseKey}/name`] = newName;
+            updates[`carkkis_payment_links/${firebaseKey}/url`] = newUrl;
+            
+            await update(ref(db), updates);
+            showToast('Enlace actualizado correctamente', 'success');
         };
 
         window.addToCart = async (id) => {
@@ -656,7 +725,6 @@
                 });
             }
             
-            // Limpiar campos de dirección
             document.getElementById('order-city').value = '';
             document.getElementById('order-address-detail').value = '';
             document.getElementById('order-payment').value = '';
@@ -693,7 +761,6 @@
             const finalName = currentUser ? currentUser.name : clientName;
             const finalPhone = currentUser ? currentUser.phone : clientPhone;
 
-            // Combinar ciudad y detalle
             const fullAddress = `${city} - ${addressDetail}`;
 
             const linkObj = window.paymentLinks.find(l => l.name === payment);
@@ -751,6 +818,52 @@
                 status: 'Pendiente'
             });
             window.closeModals(); showToast('Cita agendada', 'success'); e.target.reset();
+        };
+
+        // --- GENERACIÓN DE HORAS Y SERVICIOS ---
+        window.openBookingModal = async () => {
+            const nameInput = document.getElementById('book-name');
+            const phoneInput = document.getElementById('book-phone');
+
+            if (currentUser) {
+                nameInput.value = currentUser.name;
+                phoneInput.value = currentUser.phone;
+                nameInput.disabled = true;
+                phoneInput.disabled = true;
+            } else {
+                nameInput.value = '';
+                phoneInput.value = '';
+                nameInput.disabled = false;
+                phoneInput.disabled = false;
+            }
+
+            const serviceSelect = document.getElementById('book-service');
+            if(serviceSelect.innerHTML.trim() === '') {
+                const snap = await get(ref(db, 'carkkis_services'));
+                const rawData = snap.val();
+                const s = rawData ? Object.values(rawData) : []; 
+                s.forEach(x => { serviceSelect.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
+            }
+
+            // Generar Horarios
+            const timeSelect = document.getElementById('book-time');
+            if(timeSelect.innerHTML.trim() === '') {
+                timeSelect.innerHTML = '<option value="">Seleccione...</option>';
+                const startHour = 8;
+                const endHour = 18;
+                for (let h = startHour; h < endHour; h++) {
+                    const hourStr = h < 10 ? `0${h}:00` : `${h}:00`;
+                    timeSelect.innerHTML += `<option value="${hourStr}">${hourStr}</option>`;
+                    const halfHourStr = h < 10 ? `0${h}:30` : `${h}:30`;
+                    timeSelect.innerHTML += `<option value="${halfHourStr}">${halfHourStr}</option>`;
+                }
+            }
+            window.openModal('bookingModal');
+        };
+
+        window.selectService = (name) => {
+            window.openBookingModal();
+            setTimeout(() => document.getElementById('book-service').value = name, 100);
         };
 
         window.handleAuthClick = () => {
@@ -829,6 +942,15 @@
             if(tab === 'analytics') loadAnalytics();
         };
 
+        window.deleteItem = async (path, itemId) => {
+            if(!confirm('¿Eliminar?')) return;
+            const snap = await get(ref(db, path));
+            const data = snap.val();
+            const key = Object.keys(data).find(k => data[k].id == itemId);
+            if(key) await remove(ref(db, `${path}/${key}`));
+            showToast('Eliminado', 'info');
+        };
+
         window.addNewProduct = () => {
             const name = document.getElementById('new-prod-name').value;
             const price = document.getElementById('new-prod-price').value;
@@ -887,6 +1009,7 @@
             const name = document.getElementById('new-pay-name').value;
             const url = document.getElementById('new-pay-link').value;
             
+            // Validación mejorada para evitar duplicados vacíos
             if(!name || !url) return showToast('Nombre y URL son requeridos', 'error');
 
             const newRef = push(ref(db, 'carkkis_payment_links'));
@@ -900,27 +1023,6 @@
             
             document.getElementById('new-pay-name').value = '';
             document.getElementById('new-pay-link').value = '';
-        };
-
-        window.updatePayment = async (firebaseKey, id) => {
-            const updates = {};
-            const newName = document.getElementById(`pay-name-${id}`).value;
-            const newUrl = document.getElementById(`pay-url-${id}`).value;
-
-            updates[`carkkis_payment_links/${firebaseKey}/name`] = newName;
-            updates[`carkkis_payment_links/${firebaseKey}/url`] = newUrl;
-            
-            await update(ref(db), updates);
-            showToast('Enlace actualizado', 'success');
-        };
-
-        window.deleteItem = async (path, itemId) => {
-            if(!confirm('¿Eliminar?')) return;
-            const snap = await get(ref(db, path));
-            const data = snap.val();
-            const key = Object.keys(data).find(k => data[k].id == itemId);
-            if(key) await remove(ref(db, `${path}/${key}`));
-            showToast('Eliminado', 'info');
         };
 
         window.updateBookingStatus = async (key, status) => {
@@ -938,51 +1040,6 @@
         };
         
         window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-
-        window.openBookingModal = async () => {
-            const nameInput = document.getElementById('book-name');
-            const phoneInput = document.getElementById('book-phone');
-
-            if (currentUser) {
-                nameInput.value = currentUser.name;
-                phoneInput.value = currentUser.phone;
-                nameInput.disabled = true;
-                phoneInput.disabled = true;
-            } else {
-                nameInput.value = '';
-                phoneInput.value = '';
-                nameInput.disabled = false;
-                phoneInput.disabled = false;
-            }
-
-            const select = document.getElementById('book-service');
-            if(select.innerHTML.trim() === '') {
-                const snap = await get(ref(db, 'carkkis_services'));
-                const rawData = snap.val();
-                const s = rawData ? Object.values(rawData) : []; 
-                s.forEach(x => { select.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
-            }
-
-            // Generar Horarios
-            const timeSelect = document.getElementById('book-time');
-            if(timeSelect.innerHTML.trim() === '') {
-                timeSelect.innerHTML = '<option value="">Seleccione...</option>';
-                const startHour = 8;
-                const endHour = 18;
-                for (let h = startHour; h < endHour; h++) {
-                    const hourStr = h < 10 ? `0${h}:00` : `${h}:00`;
-                    timeSelect.innerHTML += `<option value="${hourStr}">${hourStr}</option>`;
-                    const halfHourStr = h < 10 ? `0${h}:30` : `${h}:30`;
-                    timeSelect.innerHTML += `<option value="${halfHourStr}">${halfHourStr}</option>`;
-                }
-            }
-            window.openModal('bookingModal');
-        };
-
-        window.selectService = (name) => {
-            window.openBookingModal();
-            setTimeout(() => document.getElementById('book-service').value = name, 100);
-        };
 
         function loadAnalytics() {
              document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Calculando analítica...</td></tr>';
@@ -1028,4 +1085,3 @@
     </script>
 </body>
 </html>
-
