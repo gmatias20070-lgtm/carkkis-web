@@ -31,15 +31,16 @@
         img { max-width: 100%; display: block; }
 
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; text-align: center; border: none; font-size: 0.9rem; transition: 0.3s; }
+        .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; text-align: center; border: none; font-size: 0.9rem; transition: 0.2s; }
         .btn-primary { background-color: var(--azul-acento); color: var(--blanco); }
         .btn-primary:hover { background-color: var(--azul-oscuro); }
         .btn-primary:disabled { background-color: #cbd5e1; cursor: not-allowed; }
         .btn-danger { background-color: var(--peligro); color: white; }
+        .btn-danger:hover { background-color: #dc2626; }
         .btn-success { background-color: var(--exito); color: white; }
-        .btn-outline { background: transparent; border: 1px solid white; color: white; } /* Botón Registrarse */
-        .btn-outline:hover { background: rgba(255,255,255,0.1); }
-        .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+        .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: var(--gris-texto); }
+        .btn-outline:hover { border-color: var(--azul-acento); color: var(--azul-acento); }
+        .btn-sm { padding: 5px 12px; font-size: 0.85rem; }
         .btn-link { background: none; color: var(--azul-acento); padding: 0; text-decoration: underline; }
         
         .section-title { font-size: 2rem; font-weight: 800; color: var(--azul-oscuro); text-align: center; margin-bottom: 1rem; text-transform: uppercase; }
@@ -47,13 +48,13 @@
 
         /* --- HEADER --- */
         header { background-color: var(--azul-oscuro); color: var(--blanco); padding: 1rem 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-        .nav-container { display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 1.5rem; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .logo { font-size: 1.5rem; font-weight: 900; display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .logo span { color: var(--azul-acento); }
         nav ul { display: flex; gap: 20px; }
         nav ul li a { font-weight: 500; color: #cbd5e1; }
-        .nav-actions { display: flex; gap: 15px; align-items: center; }
-        .cart-icon { position: relative; cursor: pointer; font-size: 1.2rem; }
+        .nav-actions { display: flex; gap: 10px; align-items: center; }
+        .cart-icon { position: relative; cursor: pointer; font-size: 1.2rem; margin-right: 10px; }
         .cart-badge { position: absolute; top: -8px; right: -8px; background-color: var(--azul-acento); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; font-weight: bold; }
 
         /* --- HERO --- */
@@ -111,6 +112,7 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: var(--azul-oscuro); }
         .modal-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; }
+        .modal-input:disabled { background-color: #f1f5f9; cursor: not-allowed; color: #64748b; }
         .note-warning { background-color: #fffbeb; border-left: 4px solid var(--advertencia); padding: 10px; font-size: 0.85rem; color: #92400e; margin-bottom: 15px; border-radius: 4px; }
 
         /* Carrito */
@@ -135,6 +137,8 @@
             th, td { padding: 8px; font-size: 0.8rem; }
             .whatsapp-quote-box { width: 100%; justify-content: center; text-align: center; }
             .wa-text { align-items: center; }
+            .nav-actions { width: 100%; justify-content: flex-end; margin-top: 10px; }
+            .nav-actions button { font-size: 0.8rem; padding: 8px 12px; }
         }
     </style>
 </head>
@@ -154,20 +158,12 @@
                     </ul>
                 </nav>
                 <div class="nav-actions">
-                    <!-- Carrito -->
                     <div class="cart-icon" onclick="window.openCartModal()">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-badge" id="cart-count">0</span>
                     </div>
-                    
-                    <!-- Botones de Autenticación (Públicos) -->
-                    <div id="auth-buttons" style="display: flex; gap: 10px;">
-                        <button class="btn btn-primary" onclick="window.openLoginModal()">Iniciar Sesión</button>
-                        <button class="btn btn-outline" onclick="window.openRegisterModal()">Registrarse</button>
-                    </div>
-
-                    <!-- Botón de Logout (Solo visible cuando logueado) -->
-                    <button id="logout-btn" class="btn btn-danger hidden" onclick="window.logout()">Cerrar Sesión</button>
+                    <button id="reg-btn-nav" class="btn btn-outline btn-sm" onclick="window.openModal('registerModal')">Registrarse</button>
+                    <button id="auth-btn" class="btn btn-primary btn-sm" onclick="window.handleAuthClick()">Iniciar Sesión</button>
                 </div>
             </div>
         </header>
@@ -213,6 +209,7 @@
             <aside class="admin-sidebar">
                 <h2><i class="fas fa-cogs"></i> Admin Panel</h2>
                 <ul class="sidebar-menu">
+                    <li onclick="window.switchAdminTab('payments')" id="tab-payments"><i class="fas fa-credit-card"></i> Pagos</li>
                     <li onclick="window.switchAdminTab('analytics')" id="tab-analytics"><i class="fas fa-chart-line"></i> Analítica</li>
                     <li onclick="window.switchAdminTab('profits')" id="tab-profits"><i class="fas fa-money-bill-wave"></i> Ganancias</li>
                     <li onclick="window.switchAdminTab('bookings')" id="tab-bookings"><i class="fas fa-calendar-alt"></i> Citas</li>
@@ -234,8 +231,35 @@
                     </div>
                     <div class="table-container"><h3>Detalle del Mes</h3><table id="profits-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Monto</th></tr></thead><tbody></tbody></table></div>
                 </div>
-                <div id="view-bookings" class="hidden"><h2 style="margin-bottom: 20px;">Citas Agendadas</h2><div class="table-container"><table id="bookings-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
-                <div id="view-sales" class="hidden"><h2 style="margin-bottom: 20px;">Ventas Online</h2><div class="table-container"><table id="sales-table"><thead><tr><th>ID</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="view-bookings" class="hidden"><h2 style="margin-bottom: 20px;">Citas Agendadas</h2><div class="table-container"><table id="bookings-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="view-sales" class="hidden"><h2 style="margin-bottom: 20px;">Ventas Online</h2><div class="table-container"><table id="sales-table"><thead><tr><th>ID</th><th>Cliente</th><th>Teléfono</th><th>Productos</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
+                
+                <div id="view-payments" class="hidden">
+                    <h2 style="margin-bottom: 20px;">Gestión de Enlaces de Pago</h2>
+                    <div class="note-warning" style="margin-bottom: 20px;">
+                        Estos enlaces se mostrarán al cliente al finalizar un pedido.
+                    </div>
+                    
+                    <div class="crud-grid" style="grid-template-columns: 1fr 2fr auto;">
+                        <input type="text" id="new-pay-name" placeholder="Nombre (ej. Nequi)" class="admin-input">
+                        <input type="text" id="new-pay-link" placeholder="URL del enlace (ej. https://nequi...)" class="admin-input">
+                        <button class="btn btn-primary" onclick="window.addNewPayment()">Agregar</button>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="payments-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Enlace</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div id="view-services" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Servicios</h2>
                     <div class="crud-grid">
@@ -262,27 +286,86 @@
     </div>
 
     <!-- MODALES -->
-    <div id="loginModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2 style="text-align:center;">Iniciar Sesión</h2><div class="form-group"><label>Correo</label><input type="email" id="login-email" class="modal-input"></div><div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" class="modal-input"></div><button class="btn btn-primary" style="width:100%" onclick="window.handleLogin()">Ingresar</button><small>Admin: admin@carkkis.com / admin123</small></div></div>
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="window.closeModals()">&times;</span>
+            <h2 style="text-align:center; margin-bottom: 20px;">Iniciar Sesión</h2>
+            <div class="form-group"><label>Correo</label><input type="email" id="login-email" class="modal-input"></div>
+            <div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" class="modal-input"></div>
+            <button class="btn btn-primary" style="width:100%" onclick="window.handleLogin()">Ingresar</button>
+            <div style="text-align:center; margin-top:15px; font-size:0.9rem;">
+                ¿No tienes cuenta? <a onclick="window.closeModals(); window.openModal('registerModal');" class="btn-link">Regístrate aquí</a>
+            </div>
+            <small style="display:block; text-align:center; margin-top:10px; color:#64748b;">Admin: admin@carkkis.com / admin123</small>
+        </div>
+    </div>
     
     <div id="registerModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="window.closeModals()">&times;</span>
-            <h2 style="text-align:center; color: var(--azul-oscuro);">Crear Cuenta</h2>
-            <p style="text-align:center; font-size: 0.9rem; color: #666; margin-bottom: 20px;">Crea tu cuenta para poder comprar y agendar citas.</p>
-            <div class="form-group"><label>Nombre Completo</label><input type="text" id="reg-name" class="modal-input"></div>
+            <h2 style="text-align:center; margin-bottom: 20px;">Crear Cuenta</h2>
+            <div class="form-group"><label>Nombre</label><input type="text" id="reg-name" class="modal-input"></div>
             <div class="form-group"><label>Teléfono</label><input type="tel" id="reg-phone" class="modal-input"></div>
-            <div class="form-group"><label>Correo Electrónico</label><input type="email" id="reg-email" class="modal-input"></div>
+            <div class="form-group"><label>Correo</label><input type="email" id="reg-email" class="modal-input"></div>
             <div class="form-group"><label>Contraseña</label><input type="password" id="reg-pass" class="modal-input"></div>
             <button class="btn btn-primary" style="width:100%" onclick="window.handleRegister()">Registrarse</button>
-            <div style="text-align:center; margin-top:10px;">¿Ya tienes cuenta? <a class="btn-link" onclick="window.openLoginModal()">Inicia Sesión</a></div>
+            <div style="text-align:center; margin-top:15px; font-size:0.9rem;">
+                ¿Ya tienes cuenta? <a onclick="window.closeModals(); window.openModal('loginModal');" class="btn-link">Inicia sesión</a>
+            </div>
         </div>
     </div>
 
-    <div id="cartModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2>Finalizar Pedido</h2><div id="cart-items-container"><ul id="cart-items-list"></ul><div class="cart-total-display">Total: $<span id="cart-total-amount">0</span></div></div><div class="form-group"><label>Dirección (Bogotá) *</label><input type="text" id="order-address" class="modal-input"></div><div class="form-group"><label>Método de Pago *</label><select id="order-payment" class="modal-input"></select></div><div class="note-warning">Redirigido al pago tras confirmar.</div><button class="btn btn-primary" style="width:100%" onclick="window.confirmPurchase()">Confirmar</button></div></div>
-    <div id="bookingModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2>Agendar Cita</h2><form onsubmit="window.submitBooking(event)"><div class="form-group"><label>Placa</label><input type="text" id="book-plate" class="modal-input" required></div><div class="form-group"><label>Servicio</label><select id="book-service" class="modal-input" required></select></div><div class="form-group"><label>Fecha</label><input type="date" id="book-date" class="modal-input" required></div><div class="form-group"><label>Hora</label><select id="book-time" class="modal-input" required></select></div><button type="submit" class="btn btn-primary" style="width:100%;">Agendar</button></form></div></div>
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="window.closeModals()">&times;</span>
+            <h2>Finalizar Pedido</h2>
+            <div id="cart-items-container">
+                <ul id="cart-items-list"></ul>
+                <div class="cart-total-display">Total: $<span id="cart-total-amount">0</span></div>
+            </div>
+            
+            <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="order-name" class="modal-input" placeholder="Tu nombre">
+            </div>
+            <div class="form-group">
+                <label>Teléfono / WhatsApp *</label>
+                <input type="tel" id="order-phone" class="modal-input" placeholder="Tu teléfono">
+            </div>
+            
+            <div class="form-group"><label>Dirección (Bogotá) *</label><input type="text" id="order-address" class="modal-input"></div>
+            <div class="form-group"><label>Método de Pago *</label><select id="order-payment" class="modal-input"></select></div>
+            <div class="note-warning">Redirigido al pago tras confirmar.</div>
+            <button class="btn btn-primary" style="width:100%" onclick="window.confirmPurchase()">Confirmar Pedido</button>
+        </div>
+    </div>
+
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="window.closeModals()">&times;</span>
+            <h2>Agendar Cita</h2>
+            <form onsubmit="window.submitBooking(event)">
+                <!-- Campos de datos del cliente -->
+                <div class="form-group">
+                    <label>Nombre Completo *</label>
+                    <input type="text" id="book-name" class="modal-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono *</label>
+                    <input type="tel" id="book-phone" class="modal-input" required>
+                </div>
+
+                <div class="form-group"><label>Placa</label><input type="text" id="book-plate" class="modal-input" required></div>
+                <div class="form-group"><label>Servicio</label><select id="book-service" class="modal-input" required></select></div>
+                <div class="form-group"><label>Fecha</label><input type="date" id="book-date" class="modal-input" required></div>
+                <div class="form-group"><label>Hora</label><select id="book-time" class="modal-input" required></select></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">Agendar</button>
+            </form>
+        </div>
+    </div>
     <div id="toast-container"></div>
 
-    <!-- ================= LÓGICA JAVASCRIPT (FIREBASE CORREGIDO) ================= -->
+    <!-- ================= LÓGICA JAVASCRIPT (CORREGIDO HORARIOS) ================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -313,7 +396,10 @@
                 { id: 4, name: "Mantenimiento General", price: 120000, icon: "fa-tools" } 
             ],
             users: [{ name: "Administrador", email: "admin@carkkis.com", pass: "admin123", role: "admin", phone: "0000000" }],
-            payment_links: { "Nequi": "#", "Daviplata": "#", "PSE": "#", "Wompi/Tarjeta": "#" }
+            payment_links: [ 
+                { id: 1, name: "Nequi", url: "https://nequi.com" }, 
+                { id: 2, name: "Daviplata", url: "https://daviplata.com" } 
+            ]
         };
 
         let cart = [];
@@ -341,13 +427,15 @@
             try {
                 const snap = await get(ref(db, 'carkkis_products'));
                 if (!snap.exists()) {
-                    console.log("Inicializando base de datos...");
+                    console.log("Inicializando base de datos por primera vez...");
                     await set(ref(db, 'carkkis_products'), defaultData.products);
                     await set(ref(db, 'carkkis_services'), defaultData.services);
                     await set(ref(db, 'carkkis_users'), defaultData.users);
                     await set(ref(db, 'carkkis_payment_links'), defaultData.payment_links);
                     await set(ref(db, 'carkkis_orders'), null); 
                     await set(ref(db, 'carkkis_bookings'), null);
+                } else {
+                    console.log("Base de datos ya existe. Saltando inicialización.");
                 }
             } catch (e) { console.error("Error inicializando DB:", e); }
         }
@@ -359,24 +447,30 @@
                 window.renderPublicStore(data);
                 window.renderAdminProducts(rawData);
             });
+
             onValue(ref(db, 'carkkis_services'), (snap) => {
                 const rawData = snap.val();
                 const data = rawData ? Object.values(rawData) : [];
                 window.renderPublicServices(data);
                 window.renderAdminServices(rawData);
             });
+
             onValue(ref(db, 'carkkis_bookings'), (snap) => {
                 const data = snap.val() ? Object.values(snap.val()) : [];
                 window.renderAdminBookings(data);
                 if(currentTab === 'analytics') loadAnalytics();
             });
+
             onValue(ref(db, 'carkkis_orders'), (snap) => {
                 const data = snap.val() ? Object.values(snap.val()) : [];
                 window.renderAdminSales(data);
                 loadProfits(data);
             });
+
             onValue(ref(db, 'carkkis_payment_links'), (snap) => {
-                window.paymentLinks = snap.val() || {};
+                const rawData = snap.val();
+                window.paymentLinks = rawData ? Object.values(rawData) : [];
+                window.renderAdminPayments(rawData);
             });
         }
 
@@ -396,7 +490,6 @@
                 let badgeClass = 'bg-green', stockText = `Stock: ${p.stock}`, cardClass = '', btn = `<button class="btn btn-primary btn-sm" onclick="window.addToCart(${p.id})">Añadir</button>`;
                 if (p.stock === 0) { badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock'; btn = `<button class="btn btn-outline btn-sm" disabled>Agotado</button>`; } 
                 else if (p.stock < 5) { badgeClass = 'bg-yellow'; stockText = `Últimos (${p.stock})`; }
-                
                 container.innerHTML += `<div class="product-card ${cardClass}"><div class="product-img"><i class="fas ${p.icon || 'fa-box'} fa-2x"></i></div><h3>${p.name}</h3><span class="product-price">$${(p.price || 0).toLocaleString()}</span><span class="stock-info"><span class="stock-badge ${badgeClass}">${stockText}</span></span>${btn}</div>`;
             });
         };
@@ -410,54 +503,12 @@
             });
         };
 
-        // --- LOGICA DE COMPRA (Requiere Login) ---
-        window.addToCart = async (id) => {
-            // VERIFICAR SI ESTÁ LOGUEADO
-            if (!currentUser) {
-                window.showToast('Debes iniciar sesión para comprar', 'error');
-                window.openLoginModal(); // Redirigir a login
-                return; 
-            }
-
-            const snap = await get(ref(db, 'carkkis_products'));
-            const rawData = snap.val();
-            const products = rawData ? Object.values(rawData) : [];
-            const p = products.find(x => x.id == id);
-            
-            if (p && p.stock > 0) {
-                cart.push(p);
-                document.getElementById('cart-count').innerText = cart.length;
-                window.showToast(`Agregado: ${p.name}`, 'success');
-            } else {
-                window.showToast('Producto agotado', 'error');
-            }
-        };
-
-        window.openBookingModal = () => {
-             // VERIFICAR SI ESTÁ LOGUEADO
-            if(!currentUser) { 
-                window.showToast('Debes iniciar sesión para agendar', 'error'); 
-                window.openLoginModal(); 
-                return; 
-            }
-            // Si está logueado, continua...
-            const select = document.getElementById('book-service');
-            if(select.innerHTML.trim() === '') {
-                get(ref(db, 'carkkis_services')).then(snap => {
-                    const rawData = snap.val();
-                    const s = rawData ? Object.values(rawData) : []; 
-                    s.forEach(x => { select.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
-                });
-            }
-            openModal('bookingModal');
-        };
-
         window.renderAdminBookings = (data) => {
             const tbody = document.querySelector('#bookings-table tbody');
             tbody.innerHTML = '';
             data.forEach(b => {
                 const statusClass = b.status === 'Pendiente' ? 'status-pending' : 'status-completed';
-                tbody.innerHTML += `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client}</td><td>${b.service}</td><td><span class="status-badge ${statusClass}">${b.status}</span></td><td>${b.status==='Pendiente'?`<button class="btn btn-primary btn-sm" onclick="window.updateBookingStatus('${b.id}', 'Completado')">✔</button>`:''} <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_bookings', '${b.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                tbody.innerHTML += `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client}</td><td>${b.phone}</td><td>${b.service}</td><td><span class="status-badge ${statusClass}">${b.status}</span></td><td>${b.status==='Pendiente'?`<button class="btn btn-primary btn-sm" onclick="window.updateBookingStatus('${b.id}', 'Completado')">✔</button>`:''} <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_bookings', '${b.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         };
 
@@ -469,7 +520,7 @@
                 let statusClass = o.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
                 let actions = o.status==='Pendiente'?`<button class="btn btn-success btn-sm" onclick="window.updateOrderStatus('${o.id}', 'Confirmado')"><i class="fas fa-check"></i></button> `:'';
                 actions += `<button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_orders', '${o.id}')"><i class="fas fa-trash"></i></button>`;
-                tbody.innerHTML += `<tr><td>#${o.id.toString().slice(-4)}</td><td>${o.clientName}</td><td>${o.items}</td><td>$${(o.total || 0).toLocaleString()}</td><td><span class="status-badge ${statusClass}">${o.status}</span></td><td>${actions}</td></tr>`;
+                tbody.innerHTML += `<tr><td>#${o.id.toString().slice(-4)}</td><td>${o.clientName}</td><td>${o.clientPhone || '-'}</td><td>${o.items}</td><td>$${(o.total || 0).toLocaleString()}</td><td><span class="status-badge ${statusClass}">${o.status}</span></td><td>${actions}</td></tr>`;
             });
             const statSales = document.getElementById('stat-sales');
             if(statSales) statSales.innerText = '$' + total.toLocaleString();
@@ -497,11 +548,87 @@
             }
         };
 
+        window.renderAdminPayments = (rawData) => {
+            const tbody = document.querySelector('#payments-table tbody');
+            tbody.innerHTML = '';
+            if (!rawData) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#888;">No hay enlaces configurados</td></tr>';
+                return;
+            }
+            for (const key in rawData) {
+                if (rawData.hasOwnProperty(key)) {
+                    const p = rawData[key];
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><input type="text" value="${p.name}" id="pay-name-${p.id}" class="admin-input"></td>
+                            <td><input type="text" value="${p.url}" id="pay-url-${p.id}" class="admin-input" style="font-family: monospace;"></td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="window.updatePayment('${key}', '${p.id}')"><i class="fas fa-save"></i></button> 
+                                <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_payment_links', '${p.id}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                }
+            }
+        };
+
+        window.addToCart = async (id) => {
+            const snap = await get(ref(db, 'carkkis_products'));
+            const rawData = snap.val();
+            const products = rawData ? Object.values(rawData) : [];
+            const p = products.find(x => x.id == id);
+            if (p && p.stock > 0) {
+                cart.push(p);
+                document.getElementById('cart-count').innerText = cart.length;
+                showToast(`Agregado: ${p.name}`, 'success');
+            } else {
+                showToast('Producto agotado', 'error');
+            }
+        };
+
+        window.openCartModal = async () => {
+            if (cart.length === 0) return showToast('Carrito vacío', 'info');
+            
+            const nameInput = document.getElementById('order-name');
+            const phoneInput = document.getElementById('order-phone');
+            
+            if (currentUser) {
+                nameInput.value = currentUser.name;
+                phoneInput.value = currentUser.phone;
+                nameInput.disabled = true;
+                phoneInput.disabled = true;
+            } else {
+                nameInput.value = '';
+                phoneInput.value = '';
+                nameInput.disabled = false;
+                phoneInput.disabled = false;
+            }
+
+            const list = document.getElementById('cart-items-list'); list.innerHTML = ''; let total = 0;
+            cart.forEach(i => { total += (i.price || 0); list.innerHTML += `<li><span>${i.name}</span><span>$${(i.price || 0).toLocaleString()}</span></li>`; });
+            document.getElementById('cart-total-amount').innerText = total.toLocaleString();
+            
+            const select = document.getElementById('order-payment');
+            select.innerHTML = '<option value="">Seleccione...</option>';
+            
+            if(window.paymentLinks && window.paymentLinks.length > 0) {
+                window.paymentLinks.forEach(p => {
+                    select.innerHTML += `<option value="${p.name}">${p.name}</option>`;
+                });
+            }
+            
+            document.getElementById('order-address').value = ''; document.getElementById('order-payment').value = '';
+            window.openModal('cartModal');
+        };
+
         window.confirmPurchase = async () => {
+            const clientName = document.getElementById('order-name').value;
+            const clientPhone = document.getElementById('order-phone').value;
             const address = document.getElementById('order-address').value;
             const payment = document.getElementById('order-payment').value;
-            if (!address.toLowerCase().includes('bogota')) return window.showToast('Solo envíos a Bogotá', 'error');
-            if (!payment) return window.showToast('Selecciona pago', 'error');
+
+            if(!clientName || !clientPhone) return showToast('Por favor ingresa tu nombre y teléfono', 'error');
+            if (!address.toLowerCase().includes('bogota')) return showToast('Solo envíos a Bogotá', 'error');
+            if (!payment) return showToast('Selecciona pago', 'error');
 
             const productsSnap = await get(ref(db, 'carkkis_products'));
             const products = productsSnap.val();
@@ -518,49 +645,125 @@
             const total = cart.reduce((s,i) => s + (i.price || 0), 0);
             const newOrderRef = push(ref(db, 'carkkis_orders'));
             const orderId = newOrderRef.key;
-            const newOrder = { id: orderId, clientName: currentUser.name, items: cart.map(i => i.name).join(', '), total: total, status: 'Pendiente', dateStr: new Date().toLocaleDateString(), timestamp: Date.now(), address: address, paymentMethod: payment };
+            
+            const finalName = currentUser ? currentUser.name : clientName;
+            const finalPhone = currentUser ? currentUser.phone : clientPhone;
+
+            const linkObj = window.paymentLinks.find(l => l.name === payment);
+            const paymentUrl = linkObj ? linkObj.url : '#';
+
+            const newOrder = { 
+                id: orderId, 
+                clientName: finalName, 
+                clientPhone: finalPhone,
+                items: cart.map(i => i.name).join(', '), 
+                total: total, 
+                status: 'Pendiente', 
+                dateStr: new Date().toLocaleDateString(), 
+                timestamp: Date.now(), 
+                address: address, 
+                paymentMethod: payment 
+            };
             updates['carkkis_orders/' + orderId] = newOrder;
 
             await update(ref(db), updates);
 
-            const links = window.paymentLinks || {};
-            const url = links[payment] || '#';
-            if(url !== '#') window.open(url, '_blank');
+            if(paymentUrl !== '#') window.open(paymentUrl, '_blank');
 
             cart = []; document.getElementById('cart-count').innerText = '0'; window.closeModals();
-            window.showToast('Pedido registrado', 'success');
+            showToast('Pedido registrado', 'success');
         };
 
         window.submitBooking = async (e) => {
             e.preventDefault();
-            // Ya verificado en openBookingModal, pero doble check
-            if(!currentUser) return window.showToast('Inicia sesión', 'error');
-            
+            const clientName = document.getElementById('book-name').value;
+            const clientPhone = document.getElementById('book-phone').value;
             const plate = document.getElementById('book-plate').value;
             const service = document.getElementById('book-service').value;
             const dateVal = document.getElementById('book-date').value;
             const timeVal = document.getElementById('book-time').value;
             
+            if(!clientName || !clientPhone) return showToast('Datos de contacto requeridos', 'error');
+
             const d = new Date(`${dateVal}T${timeVal}`);
-            if (d.getDay() === 0 || d.getDay() === 5 || d.getDay() === 6) return window.showToast('Solo Lun - Jue', 'error');
+            if (d.getDay() === 0 || d.getDay() === 5 || d.getDay() === 6) return showToast('Solo Lun - Jue', 'error');
 
             const newRef = push(ref(db, 'carkkis_bookings'));
+            
+            const finalName = currentUser ? currentUser.name : clientName;
+            const finalPhone = currentUser ? currentUser.phone : clientPhone;
+
             await set(newRef, {
                 id: newRef.key,
                 date: d.toLocaleDateString(),
                 time: timeVal,
-                client: currentUser.name,
-                phone: currentUser.phone,
+                client: finalName,
+                phone: finalPhone,
                 plate: plate,
                 service: service,
                 status: 'Pendiente'
             });
-            window.closeModals(); window.showToast('Cita agendada', 'success'); e.target.reset();
+            window.closeModals(); showToast('Cita agendada', 'success'); e.target.reset();
         };
 
-        // --- AUTH ---
-        window.openLoginModal = () => openModal('loginModal');
-        window.openRegisterModal = () => openModal('registerModal');
+        // --- CORREGIDO: Generación de Horas y Servicios ---
+        window.openBookingModal = async () => {
+            const nameInput = document.getElementById('book-name');
+            const phoneInput = document.getElementById('book-phone');
+
+            if (currentUser) {
+                nameInput.value = currentUser.name;
+                phoneInput.value = currentUser.phone;
+                nameInput.disabled = true;
+                phoneInput.disabled = true;
+            } else {
+                nameInput.value = '';
+                phoneInput.value = '';
+                nameInput.disabled = false;
+                phoneInput.disabled = false;
+            }
+
+            // 1. Cargar Servicios
+            const serviceSelect = document.getElementById('book-service');
+            if(serviceSelect.innerHTML.trim() === '') {
+                const snap = await get(ref(db, 'carkkis_services'));
+                const rawData = snap.val();
+                const s = rawData ? Object.values(rawData) : []; 
+                s.forEach(x => { serviceSelect.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
+            }
+
+            // 2. Cargar Horas (NUEVA LÓGICA CORREGIDA)
+            const timeSelect = document.getElementById('book-time');
+            timeSelect.innerHTML = '<option value="">Seleccione...</option>';
+            // Horario de 8 AM a 6 PM, cada 30 minutos
+            const startHour = 8;
+            const endHour = 18;
+            
+            for (let h = startHour; h < endHour; h++) {
+                // Hora en punto
+                const hourStr = h < 10 ? `0${h}:00` : `${h}:00`;
+                timeSelect.innerHTML += `<option value="${hourStr}">${hourStr}</option>`;
+                
+                // Media hora
+                const halfHourStr = h < 10 ? `0${h}:30` : `${h}:30`;
+                timeSelect.innerHTML += `<option value="${halfHourStr}">${halfHourStr}</option>`;
+            }
+
+            window.openModal('bookingModal');
+        };
+
+        window.selectService = (name) => {
+            window.openBookingModal();
+            setTimeout(() => document.getElementById('book-service').value = name, 100);
+        };
+
+        window.handleAuthClick = () => {
+            if(currentUser) {
+                window.logout();
+            } else {
+                window.openModal('loginModal');
+            }
+        };
 
         window.handleLogin = async () => {
             const email = document.getElementById('login-email').value;
@@ -569,7 +772,7 @@
             const rawData = snap.val();
             const users = rawData ? Object.values(rawData) : [];
             const user = users.find(u => u.email === email && u.pass === pass);
-            if (user) { currentUser = user; loginSuccess(); } else { window.showToast('Credenciales inválidas', 'error'); }
+            if (user) { currentUser = user; loginSuccess(); } else { showToast('Credenciales inválidas', 'error'); }
         };
 
         window.handleRegister = async () => {
@@ -577,12 +780,12 @@
             const phone = document.getElementById('reg-phone').value;
             const email = document.getElementById('reg-email').value;
             const pass = document.getElementById('reg-pass').value;
-            if(!name || !phone || !email || !pass) return window.showToast('Datos incompletos', 'error');
+            if(!name || !phone || !email || !pass) return showToast('Datos incompletos', 'error');
             
             const snap = await get(ref(db, 'carkkis_users'));
             const rawData = snap.val();
             const users = rawData ? Object.values(rawData) : [];
-            if(users.find(u => u.email === email)) return window.showToast('Correo existe', 'error');
+            if(users.find(u => u.email === email)) return showToast('Correo existe', 'error');
 
             const newRef = push(ref(db, 'carkkis_users'));
             await set(newRef, { name, phone, email, pass, role: 'client' });
@@ -592,11 +795,12 @@
         };
 
         function loginSuccess() {
-            window.closeModals(); window.showToast(`Bienvenido, ${currentUser.name}`, 'success');
+            window.closeModals(); showToast(`Bienvenido, ${currentUser.name}`, 'success');
+            const btn = document.getElementById('auth-btn');
+            btn.innerText = "Cerrar Sesión"; btn.classList.remove('btn-primary'); btn.classList.add('btn-danger');
             
-            // Actualizar UI del Header
-            document.getElementById('auth-buttons').classList.add('hidden');
-            document.getElementById('logout-btn').classList.remove('hidden');
+            const regBtn = document.getElementById('reg-btn-nav');
+            if(regBtn) regBtn.style.display = 'none';
 
             if(currentUser.role === 'admin') {
                 document.getElementById('public-view').classList.add('hidden');
@@ -608,12 +812,13 @@
         window.logout = () => {
             currentUser = null; document.getElementById('admin-panel').style.display = 'none';
             document.getElementById('public-view').classList.remove('hidden');
+            const btn = document.getElementById('auth-btn');
+            btn.innerText = 'Iniciar Sesión'; btn.classList.remove('btn-danger'); btn.classList.add('btn-primary');
             
-            // Actualizar UI del Header
-            document.getElementById('auth-buttons').classList.remove('hidden');
-            document.getElementById('logout-btn').classList.add('hidden');
+            const regBtn = document.getElementById('reg-btn-nav');
+            if(regBtn) regBtn.style.display = 'inline-block';
 
-            window.showToast('Sesión cerrada', 'info');
+            showToast('Sesión cerrada', 'info');
         };
 
         window.switchAdminTab = (tab) => {
@@ -622,10 +827,19 @@
             const tabEl = document.getElementById(`tab-${tab}`);
             if(tabEl) tabEl.classList.add('active');
             
-            ['analytics','profits','bookings','sales','services','products'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
+            ['analytics','profits','bookings','sales','payments','services','products'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
             document.getElementById(`view-${tab}`).classList.remove('hidden');
             
             if(tab === 'analytics') loadAnalytics();
+        };
+
+        window.deleteItem = async (path, itemId) => {
+            if(!confirm('¿Eliminar?')) return;
+            const snap = await get(ref(db, path));
+            const data = snap.val();
+            const key = Object.keys(data).find(k => data[k].id == itemId);
+            if(key) await remove(ref(db, `${path}/${key}`));
+            showToast('Eliminado', 'info');
         };
 
         window.addNewProduct = () => {
@@ -633,11 +847,11 @@
             const price = document.getElementById('new-prod-price').value;
             const stock = document.getElementById('new-prod-stock').value;
             const icon = document.getElementById('new-prod-icon').value || 'fa-box';
-            if(!name || !price) return window.showToast('Campos requeridos', 'error');
+            if(!name || !price) return showToast('Campos requeridos', 'error');
             
             const newRef = push(ref(db, 'carkkis_products'));
             set(newRef, { id: Date.now(), name, price: parseInt(price), stock: parseInt(stock || 10), icon });
-            window.showToast('Producto agregado', 'success');
+            showToast('Producto agregado', 'success');
             document.getElementById('new-prod-name').value = ''; 
             document.getElementById('new-prod-price').value = ''; 
             document.getElementById('new-prod-stock').value = ''; 
@@ -654,37 +868,18 @@
                 updates[`carkkis_products/${key}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
                 updates[`carkkis_products/${key}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
                 await update(ref(db), updates);
-                window.showToast('Producto actualizado', 'success');
+                showToast('Producto actualizado', 'success');
             }
         };
 
-        window.deleteItem = async (path, itemId) => {
-            if(!confirm('¿Eliminar?')) return;
-            const snap = await get(ref(db, path));
-            const data = snap.val();
-            const key = Object.keys(data).find(k => data[k].id == itemId);
-            if(key) await remove(ref(db, `${path}/${key}`));
-            window.showToast('Eliminado', 'info');
-        };
-
-        window.updateBookingStatus = async (key, status) => {
-            await update(ref(db, `carkkis_bookings/${key}`), { status });
-            window.showToast('Estado actualizado', 'success');
-        };
-
-        window.updateOrderStatus = async (key, status) => {
-            await update(ref(db, `carkkis_orders/${key}`), { status });
-            window.showToast('Estado actualizado', 'success');
-        };
-        
         window.addNewService = () => {
              const name = document.getElementById('new-serv-name').value;
              const price = document.getElementById('new-serv-price').value;
              const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
-             if(!name || !price) return window.showToast('Campos requeridos', 'error');
+             if(!name || !price) return showToast('Campos requeridos', 'error');
              const newRef = push(ref(db, 'carkkis_services'));
              set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
-             window.showToast('Servicio agregado', 'success');
+             showToast('Servicio agregado', 'success');
              document.getElementById('new-serv-name').value=''; document.getElementById('new-serv-price').value=''; document.getElementById('new-serv-icon').value='';
         };
 
@@ -697,39 +892,59 @@
                  updates[`carkkis_services/${key}/name`] = document.getElementById(`serv-name-${id}`).value;
                  updates[`carkkis_services/${key}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value);
                  await update(ref(db), updates);
-                 window.showToast('Servicio actualizado', 'success');
+                 showToast('Servicio actualizado', 'success');
             }
         };
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        window.addNewPayment = () => {
+            const name = document.getElementById('new-pay-name').value;
+            const url = document.getElementById('new-pay-link').value;
+            
+            if(!name || !url) return showToast('Nombre y URL son requeridos', 'error');
+
+            const newRef = push(ref(db, 'carkkis_payment_links'));
+            set(newRef, { 
+                id: Date.now(), 
+                name: name, 
+                url: url 
+            });
+            
+            showToast('Enlace de pago agregado', 'success');
+            
+            document.getElementById('new-pay-name').value = '';
+            document.getElementById('new-pay-link').value = '';
+        };
+
+        window.updatePayment = async (firebaseKey, id) => {
+            const updates = {};
+            const newName = document.getElementById(`pay-name-${id}`).value;
+            const newUrl = document.getElementById(`pay-url-${id}`).value;
+
+            updates[`carkkis_payment_links/${firebaseKey}/name`] = newName;
+            updates[`carkkis_payment_links/${firebaseKey}/url`] = newUrl;
+            
+            await update(ref(db), updates);
+            showToast('Enlace actualizado', 'success');
+        };
+
+        window.updateBookingStatus = async (key, status) => {
+            await update(ref(db, `carkkis_bookings/${key}`), { status });
+            showToast('Estado actualizado', 'success');
+        };
+
+        window.updateOrderStatus = async (key, status) => {
+            await update(ref(db, `carkkis_orders/${key}`), { status });
+            showToast('Estado actualizado', 'success');
+        };
+
+        window.openModal = (id) => { 
+            document.getElementById(id).style.display = 'flex'; 
+        };
         
-        window.openCartModal = () => {
-            if (cart.length === 0) return window.showToast('Carrito vacío', 'info');
-            if (!currentUser) { window.showToast('Inicia sesión', 'error'); return window.openLoginModal(); }
-            const list = document.getElementById('cart-items-list'); list.innerHTML = ''; let total = 0;
-            cart.forEach(i => { total += (i.price || 0); list.innerHTML += `<li><span>${i.name}</span><span>$${(i.price || 0).toLocaleString()}</span></li>`; });
-            document.getElementById('cart-total-amount').innerText = total.toLocaleString();
-            
-            const select = document.getElementById('order-payment');
-            select.innerHTML = '<option value="">Seleccione...</option>';
-            if(window.paymentLinks) {
-                Object.keys(window.paymentLinks).forEach(k => select.innerHTML += `<option value="${k}">${k}</option>`);
-            }
-            
-            document.getElementById('order-address').value = ''; document.getElementById('order-payment').value = '';
-            openModal('cartModal');
-        };
-
-        window.selectService = (name) => {
-            window.openBookingModal();
-            setTimeout(() => document.getElementById('book-service').value = name, 100);
-        };
-
-        window.renderTimeSlots = () => {};
+        window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
 
         function loadAnalytics() {
-             document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Analítica disponible en versión Pro</td></tr>';
+             document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Calculando analítica...</td></tr>';
         }
 
         function loadProfits(orders) {
@@ -764,11 +979,11 @@
         }
 
         window.onload = () => {
+            console.log("Cargando aplicación...");
             seedData();
             setupListeners();
         };
         window.onclick = (e) => { if(e.target.classList.contains('modal')) window.closeModals(); };
-
     </script>
 </body>
 </html>
