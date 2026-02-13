@@ -405,6 +405,19 @@
 
                 <div class="form-group"><label>Placa</label><input type="text" id="book-plate" class="modal-input" required></div>
                 <div class="form-group"><label>Servicio</label><select id="book-service" class="modal-input" required></select></div>
+                
+                <!-- NUEVO CAMPO: TIPO DE FALLA / NOTA -->
+                <div class="form-group">
+                    <label>Tipo de Falla / Nota</label>
+                    <select id="book-issue" class="modal-input" required>
+                        <option value="general">Mantenimiento General / Otros</option>
+                        <option value="ruidos">Ruidos</option>
+                        <option value="electrico">Fallas Eléctricas</option>
+                        <option value="largo">Reparaciones Largas</option>
+                    </select>
+                    <small style="color: #64748b; font-size: 0.75rem;">Si seleccionas Ruidos, Eléctrico o Largo, no podrás agendar el sábado.</small>
+                </div>
+
                 <div class="form-group"><label>Fecha</label><input type="date" id="book-date" class="modal-input" required></div>
                 <div class="form-group"><label>Hora</label><select id="book-time" class="modal-input" required></select></div>
                 <button type="submit" class="btn btn-primary" style="width:100%;">Agendar</button>
@@ -607,7 +620,7 @@
             for (const key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
-                    // LIMPIZA VISUAL: No mostrar si no tiene nombre o enlace
+                    // LIMPIEZA VISUAL: No mostrar si no tiene nombre o enlace
                     if(!p.name || !p.url) continue; 
 
                     tbody.innerHTML += `
@@ -788,19 +801,39 @@
             showToast('Pedido registrado', 'success');
         };
 
+        // --- NUEVA LÓGICA DE VALIDACIÓN DE CITAS ---
         window.submitBooking = async (e) => {
             e.preventDefault();
             const clientName = document.getElementById('book-name').value;
             const clientPhone = document.getElementById('book-phone').value;
             const plate = document.getElementById('book-plate').value;
             const service = document.getElementById('book-service').value;
+            const issueType = document.getElementById('book-issue').value; // Nuevo campo
             const dateVal = document.getElementById('book-date').value;
             const timeVal = document.getElementById('book-time').value;
             
             if(!clientName || !clientPhone) return showToast('Datos de contacto requeridos', 'error');
 
             const d = new Date(`${dateVal}T${timeVal}`);
-            if (d.getDay() === 0 || d.getDay() === 5 || d.getDay() === 6) return showToast('Solo Lun - Jue', 'error');
+            const dayOfWeek = d.getDay(); // 0 = Domingo, 6 = Sábado
+
+            // --- LÓGICA DEL SÁBADO ---
+            if (dayOfWeek === 6) {
+                // 1. Validar Hora (Solo hasta medio día / 12:00 PM)
+                // Convertimos la hora seleccionada a número para comparar
+                const [hourStr, minStr] = timeVal.split(':');
+                const hour = parseInt(hourStr);
+                
+                if (hour >= 12) {
+                    return showToast('Los sábados solo se agenda hasta las 12:00 PM', 'error');
+                }
+
+                // 2. Validar Tipo de Reparación
+                // Si el issue es ruidos, electrico o largo -> No agendar sábado
+                if (issueType === 'ruidos' || issueType === 'electrico' || issueType === 'largo') {
+                    return showToast('Por política, este tipo de reparaciones no se agendan los sábados', 'error');
+                }
+            }
 
             const newRef = push(ref(db, 'carkkis_bookings'));
             
@@ -815,6 +848,7 @@
                 phone: finalPhone,
                 plate: plate,
                 service: service,
+                issueType: issueType, // Guardamos el tipo de fallo
                 status: 'Pendiente'
             });
             window.closeModals(); showToast('Cita agendada', 'success'); e.target.reset();
@@ -845,17 +879,28 @@
                 s.forEach(x => { serviceSelect.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
             }
 
-            // Generar Horarios
+            // Generar Horarios (CAMBIO: Inicio 9:15 AM)
             const timeSelect = document.getElementById('book-time');
-            if(timeSelect.innerHTML.trim() === '') {
-                timeSelect.innerHTML = '<option value="">Seleccione...</option>';
-                const startHour = 8;
-                const endHour = 18;
-                for (let h = startHour; h < endHour; h++) {
-                    const hourStr = h < 10 ? `0${h}:00` : `${h}:00`;
-                    timeSelect.innerHTML += `<option value="${hourStr}">${hourStr}</option>`;
-                    const halfHourStr = h < 10 ? `0${h}:30` : `${h}:30`;
-                    timeSelect.innerHTML += `<option value="${halfHourStr}">${halfHourStr}</option>`;
+            timeSelect.innerHTML = '<option value="">Seleccione...</option>';
+            
+            // Inicio: 9 horas, 15 minutos
+            let currentHour = 9;
+            let currentMinute = 15;
+            const endHour = 18; // 6 PM fin del día
+
+            while (currentHour < endHour) {
+                // Formatear hora HH:MM
+                const hourStr = currentHour < 10 ? `0${currentHour}` : currentHour;
+                const minStr = currentMinute < 10 ? `0${currentMinute}` : currentMinute;
+                const timeStr = `${hourStr}:${minStr}`;
+                
+                timeSelect.innerHTML += `<option value="${timeStr}">${timeStr}</option>`;
+                
+                // Sumar 30 minutos
+                currentMinute += 30;
+                if (currentMinute >= 60) {
+                    currentMinute -= 60;
+                    currentHour++;
                 }
             }
             window.openModal('bookingModal');
