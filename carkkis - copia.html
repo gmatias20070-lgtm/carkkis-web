@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CARKKIS | Sistema Integral - Corregido</title>
+    <!-- Fuentes e Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- ESTILOS VISUALES (CSS) --- */
+        :root {
+            --azul-oscuro: #0f172a;
+            --azul-claro: #1e293b;
+            --azul-acento: #3b82f6;
+            --blanco: #ffffff;
+            --negro: #000000;
+            --gris-texto: #334155;
+            --gris-fondo: #f8fafc;
+            --exito: #10b981;
+            --peligro: #ef4444;
+            --advertencia: #f59e0b;
+            --wa-green: #25D366;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--blanco); color: var(--negro); line-height: 1.6; overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; transition: 0.3s; cursor: pointer; }
+        ul { list-style: none; }
+        img { max-width: 100%; display: block; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .btn { display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; text-align: center; border: none; font-size: 0.9rem; }
+        .btn-primary { background-color: var(--azul-acento); color: var(--blanco); }
+        .btn-primary:hover { background-color: var(--azul-oscuro); }
+        .btn-primary:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+        .btn-danger { background-color: var(--peligro); color: white; }
+        .btn-success { background-color: var(--exito); color: white; }
+        .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: var(--gris-texto); }
+        .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+        .btn-link { background: none; color: var(--azul-acento); padding: 0; text-decoration: underline; }
+        
+        .section-title { font-size: 2rem; font-weight: 800; color: var(--azul-oscuro); text-align: center; margin-bottom: 1rem; text-transform: uppercase; }
+        section { padding: 60px 0; }
+
+        /* --- HEADER --- */
+        header { background-color: var(--azul-oscuro); color: var(--blanco); padding: 1rem 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+        .logo span { color: var(--azul-acento); }
+        nav ul { display: flex; gap: 20px; }
+        nav ul li a { font-weight: 500; color: #cbd5e1; }
+        .nav-actions { display: flex; gap: 15px; align-items: center; }
+        .cart-icon { position: relative; cursor: pointer; font-size: 1.2rem; }
+        .cart-badge { position: absolute; top: -8px; right: -8px; background-color: var(--azul-acento); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; font-weight: bold; }
+
+        /* --- HERO --- */
+        .hero { background: linear-gradient(135deg, var(--azul-oscuro) 0%, #1e1e24 100%); color: var(--blanco); padding: 80px 0; text-align: center; }
+        .hero h1 { font-size: 2.5rem; margin-bottom: 20px; font-weight: 900; }
+        .whatsapp-quote-box { margin-top: 25px; padding: 15px 25px; background: rgba(37, 211, 102, 0.1); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: 50px; display: inline-flex; align-items: center; gap: 15px; cursor: pointer; transition: all 0.3s ease; }
+        .whatsapp-quote-box:hover { background: rgba(37, 211, 102, 0.2); transform: translateY(-2px); border-color: var(--wa-green); box-shadow: 0 4px 15px rgba(37, 211, 102, 0.2); }
+        .wa-icon { color: var(--wa-green); font-size: 2rem; }
+        .wa-text { display: flex; flex-direction: column; align-items: flex-start; }
+        .wa-label { font-size: 0.75rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .wa-number { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+        /* --- TIENDA --- */
+        .shop-preview { background-color: var(--gris-fondo); }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 30px; }
+        .product-card { background: var(--blanco); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; transition: 0.3s; border: 1px solid #e2e8f0; position: relative; }
+        .product-card:hover { transform: translateY(-5px); border-color: var(--azul-acento); }
+        .product-price { font-size: 1.2rem; font-weight: 700; color: var(--azul-oscuro); margin: 10px 0; display: block; }
+        .product-img { height: 100px; background-color: #f1f5f9; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--azul-claro); }
+        .stock-info { font-size: 0.85rem; margin-bottom: 10px; display: block; color: var(--gris-texto); }
+        .stock-badge { padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+        .bg-green { background-color: #dcfce7; color: #166534; }
+        .bg-yellow { background-color: #fef3c7; color: #92400e; }
+        .bg-red { background-color: #fee2e2; color: #991b1b; }
+        .product-card.out-of-stock { opacity: 0.7; border-style: dashed; }
+        .product-card.out-of-stock .product-img { filter: grayscale(100%); }
+
+        /* --- ADMIN PANEL --- */
+        #admin-panel { display: none; background-color: #f1f5f9; min-height: 100vh; padding-bottom: 50px; }
+        .admin-layout { display: grid; grid-template-columns: 250px 1fr; gap: 0; min-height: 100vh; }
+        .admin-sidebar { background-color: var(--azul-oscuro); color: white; padding: 20px; }
+        .admin-sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .sidebar-menu li { padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; color: #94a3b8; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+        .sidebar-menu li:hover, .sidebar-menu li.active { background-color: var(--azul-acento); color: white; }
+        .admin-content { padding: 30px; }
+        .dashboard-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .stat-number { font-size: 2rem; font-weight: 800; color: var(--azul-oscuro); }
+        .stat-label { color: var(--gris-texto); font-size: 0.9rem; }
+        .table-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; vertical-align: middle; }
+        th { background-color: #f8fafc; color: var(--azul-oscuro); font-weight: 600; white-space: nowrap; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+        .status-pending { background-color: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+        .status-confirmed { background-color: #ecfdf5; color: #047857; border: 1px solid #d1fae5; }
+        .admin-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .crud-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .table-input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; width: 80px; }
+
+        /* --- MODALES --- */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; position: relative; animation: slideDown 0.3s; max-height: 90vh; overflow-y: auto; }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: var(--azul-oscuro); }
+        .modal-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; }
+        .note-warning { background-color: #fffbeb; border-left: 4px solid var(--advertencia); padding: 10px; font-size: 0.85rem; color: #92400e; margin-bottom: 15px; border-radius: 4px; }
+
+        /* Carrito */
+        #cart-items-list { border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-bottom: 15px; max-height: 150px; overflow-y: auto; background: #f8fafc; }
+        #cart-items-list li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #e2e8f0; font-size: 0.9rem; }
+        .cart-total-display { text-align: right; font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; color: var(--azul-oscuro); padding-top: 10px; border-top: 2px solid #e2e8f0; }
+
+        /* TOASTS */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background-color: var(--azul-oscuro); color: white; padding: 12px 20px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; border-left: 4px solid var(--azul-acento); animation: slideIn 0.3s; min-width: 250px; }
+        .hidden { display: none !important; }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        
+        @media (max-width: 768px) {
+            .admin-layout { grid-template-columns: 1fr; }
+            .admin-sidebar { display: flex; overflow-x: auto; padding: 10px; align-items: center; }
+            .sidebar-menu { display: flex; gap: 10px; }
+            .sidebar-menu li { white-space: nowrap; }
+            .crud-grid { grid-template-columns: 1fr; }
+            .table-input { width: 60px; }
+            th, td { padding: 8px; font-size: 0.8rem; }
+            .whatsapp-quote-box { width: 100%; justify-content: center; text-align: center; }
+            .wa-text { align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="public-view">
+        <header>
+            <div class="container nav-container">
+                <div class="logo" onclick="window.showSection('home')">
+                    <i class="fas fa-cube"></i> CARKKIS <span>INTELIGENTE</span>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a onclick="window.showSection('home')">Inicio</a></li>
+                        <li><a onclick="window.showSection('store')">Tienda</a></li>
+                        <li><a onclick="window.showSection('services')">Servicios</a></li>
+                    </ul>
+                </nav>
+                <div class="nav-actions">
+                    <div class="cart-icon" onclick="window.openCartModal()">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="cart-badge" id="cart-count">0</span>
+                    </div>
+                    <button id="auth-btn" class="btn btn-primary" onclick="window.handleAuthClick()">Iniciar Sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <section id="home" class="hero">
+            <div class="container">
+                <h1>Tecnología y Servicio para tu Vehículo</h1>
+                <p style="color: #cbd5e1; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    Gestión inteligente, envíos exclusivos a Bogotá y pagos anticipados.
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="window.openBookingModal()">Agendar Cita</button>
+                    <button class="btn btn-primary" style="background: transparent; border: 2px solid white;" onclick="window.showSection('store')">Ver Tienda</button>
+                </div>
+                <a href="https://wa.me/573043356340?text=Hola,%20quisiera%20una%20cotización" target="_blank" class="whatsapp-quote-box">
+                    <i class="fab fa-whatsapp wa-icon"></i>
+                    <div class="wa-text">
+                        <span class="wa-label">Solicita Cotización</span>
+                        <span class="wa-number">+57 304 3356340</span>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section id="store" class="shop-preview hidden">
+            <div class="container">
+                <h2 class="section-title">Catálogo de Repuestos</h2>
+                <div id="products-container" class="products-grid"></div>
+            </div>
+        </section>
+
+        <section id="services" class="hidden" style="background: white; padding: 60px 0;">
+            <div class="container">
+                <h2 class="section-title">Nuestros Servicios</h2>
+                <div id="public-services-grid" class="products-grid"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ================= PANEL ADMINISTRADOR ================= -->
+    <div id="admin-panel">
+        <div class="admin-layout">
+            <aside class="admin-sidebar">
+                <h2><i class="fas fa-cogs"></i> Admin Panel</h2>
+                <ul class="sidebar-menu">
+                    <li onclick="window.switchAdminTab('analytics')" id="tab-analytics"><i class="fas fa-chart-line"></i> Analítica</li>
+                    <li onclick="window.switchAdminTab('profits')" id="tab-profits"><i class="fas fa-money-bill-wave"></i> Ganancias</li>
+                    <li onclick="window.switchAdminTab('bookings')" id="tab-bookings"><i class="fas fa-calendar-alt"></i> Citas</li>
+                    <li onclick="window.switchAdminTab('sales')" id="tab-sales"><i class="fas fa-shopping-bag"></i> Ventas</li>
+                    <li onclick="window.switchAdminTab('services')" id="tab-services"><i class="fas fa-wrench"></i> Servicios</li>
+                    <li onclick="window.switchAdminTab('products')" id="tab-products"><i class="fas fa-boxes"></i> Productos</li>
+                    <li onclick="window.resetDB()" style="color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); margin-top: 10px;"><i class="fas fa-exclamation-triangle"></i> Resetear DB</li>
+                    <li onclick="window.logout()" style="margin-top: auto; color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Salir</li>
+                </ul>
+            </aside>
+            
+            <main class="admin-content">
+                <div id="view-analytics"><h2 style="margin-bottom: 20px;">Analítica de Usuarios</h2><div class="table-container"><table id="analytics-table"><thead><tr><th>Usuario</th><th>Tasa Conversión</th><th>Tiempo Promedio</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="view-profits" class="hidden">
+                    <h2 style="margin-bottom: 20px;">Ganancias del Mes</h2>
+                    <div class="dashboard-cards">
+                        <div class="stat-card"><div class="stat-number" id="monthly-profit" style="color: var(--exito);">$0</div><div class="stat-label">Ingresos Totales</div></div>
+                        <div class="stat-card"><div class="stat-number" id="monthly-orders">0</div><div class="stat-label">Pedidos del Mes</div></div>
+                    </div>
+                    <div class="table-container"><h3>Detalle del Mes</h3><table id="profits-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Monto</th></tr></thead><tbody></tbody></table></div>
+                </div>
+                <div id="view-bookings" class="hidden"><h2 style="margin-bottom: 20px;">Citas Agendadas</h2><div class="table-container"><table id="bookings-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="view-sales" class="hidden"><h2 style="margin-bottom: 20px;">Ventas Online</h2><div class="table-container"><table id="sales-table"><thead><tr><th>ID</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
+                <div id="view-services" class="hidden">
+                    <h2 style="margin-bottom: 20px;">Gestión de Servicios</h2>
+                    <div class="crud-grid">
+                        <input type="text" id="new-serv-name" placeholder="Nombre" class="admin-input">
+                        <input type="number" id="new-serv-price" placeholder="Precio ($)" class="admin-input">
+                        <input type="text" id="new-serv-icon" placeholder="Icono (fa-wrench)" class="admin-input">
+                        <button class="btn btn-primary" onclick="window.addNewService()">Agregar</button>
+                    </div>
+                    <div class="table-container"><table id="services-table"><thead><tr><th>Icono</th><th>Nombre</th><th>Precio</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
+                </div>
+                <div id="view-products" class="hidden">
+                    <h2 style="margin-bottom: 20px;">Gestión de Inventario</h2>
+                    <div class="crud-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr auto;">
+                        <input type="text" id="new-prod-name" placeholder="Nombre" class="admin-input">
+                        <input type="number" id="new-prod-price" placeholder="Precio ($)" class="admin-input">
+                        <input type="number" id="new-prod-stock" placeholder="Stock" class="admin-input">
+                        <input type="text" id="new-prod-icon" placeholder="Icono" class="admin-input">
+                        <button class="btn btn-primary" onclick="window.addNewProduct()">Agregar</button>
+                    </div>
+                    <div class="table-container"><table id="products-table"><thead><tr><th>Icono</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODALES -->
+    <div id="loginModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2 style="text-align:center;">Iniciar Sesión</h2><div class="form-group"><label>Correo</label><input type="email" id="login-email" class="modal-input"></div><div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" class="modal-input"></div><button class="btn btn-primary" style="width:100%" onclick="window.handleLogin()">Ingresar</button><small>Admin: admin@carkkis.com / admin123</small></div></div>
+    <div id="registerModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2 style="text-align:center;">Crear Cuenta</h2><div class="form-group"><label>Nombre</label><input type="text" id="reg-name" class="modal-input"></div><div class="form-group"><label>Teléfono</label><input type="tel" id="reg-phone" class="modal-input"></div><div class="form-group"><label>Correo</label><input type="email" id="reg-email" class="modal-input"></div><div class="form-group"><label>Contraseña</label><input type="password" id="reg-pass" class="modal-input"></div><button class="btn btn-primary" style="width:100%" onclick="window.handleRegister()">Registrarse</button></div></div>
+    <div id="cartModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2>Finalizar Pedido</h2><div id="cart-items-container"><ul id="cart-items-list"></ul><div class="cart-total-display">Total: $<span id="cart-total-amount">0</span></div></div><div class="form-group"><label>Dirección (Bogotá) *</label><input type="text" id="order-address" class="modal-input"></div><div class="form-group"><label>Método de Pago *</label><select id="order-payment" class="modal-input"></select></div><div class="note-warning">Redirigido al pago tras confirmar.</div><button class="btn btn-primary" style="width:100%" onclick="window.confirmPurchase()">Confirmar</button></div></div>
+    <div id="bookingModal" class="modal"><div class="modal-content"><span class="close-modal" onclick="window.closeModals()">&times;</span><h2>Agendar Cita</h2><form onsubmit="window.submitBooking(event)"><div class="form-group"><label>Placa</label><input type="text" id="book-plate" class="modal-input" required></div><div class="form-group"><label>Servicio</label><select id="book-service" class="modal-input" required></select></div><div class="form-group"><label>Fecha</label><input type="date" id="book-date" class="modal-input" required></div><div class="form-group"><label>Hora</label><select id="book-time" class="modal-input" required></select></div><button type="submit" class="btn btn-primary" style="width:100%;">Agendar</button></form></div></div>
+    <div id="toast-container"></div>
+
+    <!-- ================= LÓGICA JAVASCRIPT (FIREBASE CORREGIDO + RESET) ================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBWioM-9lQwEpu6beOkZVM6_anUoYmrxDQ",
+          authDomain: "carkkis-d0caf.firebaseapp.com",
+          databaseURL: "https://carkkis-d0caf-default-rtdb.firebaseio.com",
+          projectId: "carkkis-d0caf",
+          storageBucket: "carkkis-d0caf.firebasestorage.app",
+          messagingSenderId: "247530396114",
+          appId: "1:247530396114:web:294e217ae0f235b568100b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const defaultData = {
+            products: [ 
+                { id: 1, name: "Aceite Sintético 5W-30", price: 85000, icon: "fa-oil-can", stock: 15 }, 
+                { id: 2, name: "Filtro de Aire", price: 25000, icon: "fa-wind", stock: 3 }, 
+                { id: 3, name: "Batería 12V", price: 450000, icon: "fa-car-battery", stock: 0 } 
+            ],
+            services: [ 
+                { id: 1, name: "Alineación y Balanceo", price: 45000, icon: "fa-car-side" }, 
+                { id: 2, name: "Cambio de Aceite", price: 60000, icon: "fa-oil-can" }, 
+                { id: 3, name: "Escáner Automotriz", price: 35000, icon: "fa-laptop-medical" }, 
+                { id: 4, name: "Mantenimiento General", price: 120000, icon: "fa-tools" } 
+            ],
+            users: [{ name: "Administrador", email: "admin@carkkis.com", pass: "admin123", role: "admin", phone: "0000000" }],
+            payment_links: { "Nequi": "#", "Daviplata": "#", "PSE": "#", "Wompi/Tarjeta": "#" }
+        };
+
+        let cart = [];
+        let currentUser = null;
+        let currentTab = 'analytics';
+
+        // --- FUNCION DE RESET ---
+        window.resetDB = async () => {
+            if(!confirm("ADVERTENCIA: ¿Estás seguro de RESETEAR la base de datos? Se perderán todos los pedidos y usuarios nuevos.")) return;
+            try {
+                console.log("Reseteando base de datos...");
+                await set(ref(db, 'carkkis_products'), defaultData.products);
+                await set(ref(db, 'carkkis_services'), defaultData.services);
+                await set(ref(db, 'carkkis_users'), defaultData.users);
+                await set(ref(db, 'carkkis_payment_links'), defaultData.payment_links);
+                await set(ref(db, 'carkkis_orders'), null); 
+                await set(ref(db, 'carkkis_bookings'), null);
+                window.showToast("Base de datos restaurada correctamente", "success");
+            } catch (e) {
+                console.error(e);
+                window.showToast("Error al resetear: " + e.message, "error");
+            }
+        };
+
+        async function seedData() {
+            try {
+                const snap = await get(ref(db, 'carkkis_products'));
+                if (!snap.exists()) {
+                    console.log("Inicializando base de datos por primera vez...");
+                    await set(ref(db, 'carkkis_products'), defaultData.products);
+                    await set(ref(db, 'carkkis_services'), defaultData.services);
+                    await set(ref(db, 'carkkis_users'), defaultData.users);
+                    await set(ref(db, 'carkkis_payment_links'), defaultData.payment_links);
+                    await set(ref(db, 'carkkis_orders'), null); 
+                    await set(ref(db, 'carkkis_bookings'), null);
+                } else {
+                    console.log("Base de datos ya existe. Saltando inicialización.");
+                }
+            } catch (e) { console.error("Error inicializando DB:", e); }
+        }
+
+        function setupListeners() {
+            onValue(ref(db, 'carkkis_products'), (snap) => {
+                const rawData = snap.val();
+                const data = rawData ? Object.values(rawData) : [];
+                console.log("Productos recibidos:", data); // Log de depuración
+                window.renderPublicStore(data);
+                window.renderAdminProducts(rawData);
+            });
+
+            onValue(ref(db, 'carkkis_services'), (snap) => {
+                const rawData = snap.val();
+                const data = rawData ? Object.values(rawData) : [];
+                console.log("Servicios recibidos:", data);
+                window.renderPublicServices(data);
+                window.renderAdminServices(rawData);
+            });
+
+            onValue(ref(db, 'carkkis_bookings'), (snap) => {
+                const data = snap.val() ? Object.values(snap.val()) : [];
+                window.renderAdminBookings(data);
+                if(currentTab === 'analytics') loadAnalytics();
+            });
+
+            onValue(ref(db, 'carkkis_orders'), (snap) => {
+                const data = snap.val() ? Object.values(snap.val()) : [];
+                window.renderAdminSales(data);
+                loadProfits(data);
+            });
+
+            onValue(ref(db, 'carkkis_payment_links'), (snap) => {
+                window.paymentLinks = snap.val() || {};
+            });
+        }
+
+        // --- FUNCIONES EXPORTADAS A WINDOW ---
+        window.showSection = (id) => {
+            document.getElementById('home').classList.add('hidden');
+            document.getElementById('store').classList.add('hidden');
+            document.getElementById('services').classList.add('hidden');
+            document.getElementById(id).classList.remove('hidden');
+            window.scrollTo(0,0);
+        };
+
+        window.renderPublicStore = (products) => {
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
+            if(!Array.isArray(products)) return;
+            products.forEach(p => {
+                let badgeClass = 'bg-green', stockText = `Stock: ${p.stock}`, cardClass = '', btn = `<button class="btn btn-primary btn-sm" onclick="window.addToCart(${p.id})">Añadir</button>`;
+                if (p.stock === 0) { badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock'; btn = `<button class="btn btn-outline btn-sm" disabled>Agotado</button>`; } 
+                else if (p.stock < 5) { badgeClass = 'bg-yellow'; stockText = `Últimos (${p.stock})`; }
+                
+                container.innerHTML += `<div class="product-card ${cardClass}"><div class="product-img"><i class="fas ${p.icon || 'fa-box'} fa-2x"></i></div><h3>${p.name}</h3><span class="product-price">$${(p.price || 0).toLocaleString()}</span><span class="stock-info"><span class="stock-badge ${badgeClass}">${stockText}</span></span>${btn}</div>`;
+            });
+        };
+
+        window.renderPublicServices = (services) => {
+            const container = document.getElementById('public-services-grid');
+            container.innerHTML = '';
+            if(!Array.isArray(services)) return;
+            services.forEach(s => {
+                container.innerHTML += `<div class="product-card" onclick="window.selectService('${s.name}')"><div class="product-img"><i class="fas ${s.icon || 'fa-wrench'} fa-2x"></i></div><h3>${s.name}</h3><span class="product-price">$${(s.price || 0).toLocaleString()}</span></div>`;
+            });
+        };
+
+        window.renderAdminBookings = (data) => {
+            const tbody = document.querySelector('#bookings-table tbody');
+            tbody.innerHTML = '';
+            data.forEach(b => {
+                const statusClass = b.status === 'Pendiente' ? 'status-pending' : 'status-completed';
+                tbody.innerHTML += `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client}</td><td>${b.service}</td><td><span class="status-badge ${statusClass}">${b.status}</span></td><td>${b.status==='Pendiente'?`<button class="btn btn-primary btn-sm" onclick="window.updateBookingStatus('${b.id}', 'Completado')">✔</button>`:''} <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_bookings', '${b.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+        };
+
+        window.renderAdminSales = (data) => {
+            const tbody = document.querySelector('#sales-table tbody');
+            let total = 0; tbody.innerHTML = '';
+            data.forEach(o => {
+                if (o.status === 'Confirmado') total += (o.total || 0);
+                let statusClass = o.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
+                let actions = o.status==='Pendiente'?`<button class="btn btn-success btn-sm" onclick="window.updateOrderStatus('${o.id}', 'Confirmado')"><i class="fas fa-check"></i></button> `:'';
+                actions += `<button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_orders', '${o.id}')"><i class="fas fa-trash"></i></button>`;
+                tbody.innerHTML += `<tr><td>#${o.id.toString().slice(-4)}</td><td>${o.clientName}</td><td>${o.items}</td><td>$${(o.total || 0).toLocaleString()}</td><td><span class="status-badge ${statusClass}">${o.status}</span></td><td>${actions}</td></tr>`;
+            });
+            const statSales = document.getElementById('stat-sales');
+            if(statSales) statSales.innerText = '$' + total.toLocaleString();
+        };
+
+        window.renderAdminServices = (rawData) => {
+            const tbody = document.querySelector('#services-table tbody');
+            tbody.innerHTML = '';
+            for (let key in rawData) {
+                if (rawData.hasOwnProperty(key)) {
+                    const s = rawData[key];
+                    tbody.innerHTML += `<tr><td><i class="fas ${s.icon}"></i></td><td><input type="text" value="${s.name}" id="serv-name-${s.id}" class="admin-input"></td><td><input type="number" value="${s.price || 0}" id="serv-price-${s.id}" class="table-input"></td><td><button class="btn btn-success btn-sm" onclick="window.updateService('${s.id}')"><i class="fas fa-save"></i></button> <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_services', '${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                }
+            }
+        };
+
+        window.renderAdminProducts = (rawData) => {
+            const tbody = document.querySelector('#products-table tbody');
+            tbody.innerHTML = '';
+            for (let key in rawData) {
+                if (rawData.hasOwnProperty(key)) {
+                    const p = rawData[key];
+                    tbody.innerHTML += `<tr><td><i class="fas ${p.icon}"></i></td><td><input type="text" value="${p.name}" id="prod-name-${p.id}" class="admin-input"></td><td><input type="number" value="${p.price || 0}" id="prod-price-${p.id}" class="table-input"></td><td><input type="number" value="${p.stock || 0}" id="prod-stock-${p.id}" class="table-input" min="0"></td><td><button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}')"><i class="fas fa-save"></i></button> <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_products', '${p.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                }
+            }
+        };
+
+        window.addToCart = async (id) => {
+            if (!currentUser) return showToast('Inicia sesión primero', 'error');
+            const snap = await get(ref(db, 'carkkis_products'));
+            const rawData = snap.val();
+            const products = rawData ? Object.values(rawData) : [];
+            const p = products.find(x => x.id == id);
+            if (p && p.stock > 0) {
+                cart.push(p);
+                document.getElementById('cart-count').innerText = cart.length;
+                showToast(`Agregado: ${p.name}`, 'success');
+            } else {
+                showToast('Producto agotado', 'error');
+            }
+        };
+
+        window.confirmPurchase = async () => {
+            const address = document.getElementById('order-address').value;
+            const payment = document.getElementById('order-payment').value;
+            if (!address.toLowerCase().includes('bogota')) return showToast('Solo envíos a Bogotá', 'error');
+            if (!payment) return showToast('Selecciona pago', 'error');
+
+            const productsSnap = await get(ref(db, 'carkkis_products'));
+            const products = productsSnap.val();
+            const updates = {};
+
+            cart.forEach(cartItem => {
+                const productKey = Object.keys(products).find(key => products[key].id == cartItem.id);
+                if(productKey && products[productKey].stock > 0) {
+                    products[productKey].stock -= 1;
+                    updates['carkkis_products/' + productKey] = products[productKey];
+                }
+            });
+
+            const total = cart.reduce((s,i) => s + (i.price || 0), 0);
+            const newOrderRef = push(ref(db, 'carkkis_orders'));
+            const orderId = newOrderRef.key;
+            const newOrder = { id: orderId, clientName: currentUser.name, items: cart.map(i => i.name).join(', '), total: total, status: 'Pendiente', dateStr: new Date().toLocaleDateString(), timestamp: Date.now(), address: address, paymentMethod: payment };
+            updates['carkkis_orders/' + orderId] = newOrder;
+
+            await update(ref(db), updates);
+
+            const links = window.paymentLinks || {};
+            const url = links[payment] || '#';
+            if(url !== '#') window.open(url, '_blank');
+
+            cart = []; document.getElementById('cart-count').innerText = '0'; window.closeModals();
+            showToast('Pedido registrado', 'success');
+        };
+
+        window.submitBooking = async (e) => {
+            e.preventDefault();
+            if(!currentUser) return showToast('Inicia sesión', 'error');
+            const plate = document.getElementById('book-plate').value;
+            const service = document.getElementById('book-service').value;
+            const dateVal = document.getElementById('book-date').value;
+            const timeVal = document.getElementById('book-time').value;
+            
+            const d = new Date(`${dateVal}T${timeVal}`);
+            if (d.getDay() === 0 || d.getDay() === 5 || d.getDay() === 6) return showToast('Solo Lun - Jue', 'error');
+
+            const newRef = push(ref(db, 'carkkis_bookings'));
+            await set(newRef, {
+                id: newRef.key,
+                date: d.toLocaleDateString(),
+                time: timeVal,
+                client: currentUser.name,
+                phone: currentUser.phone,
+                plate: plate,
+                service: service,
+                status: 'Pendiente'
+            });
+            window.closeModals(); showToast('Cita agendada', 'success'); e.target.reset();
+        };
+
+        window.handleAuthClick = () => currentUser ? window.logout() : openModal('loginModal');
+        window.handleLogin = async () => {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            const snap = await get(ref(db, 'carkkis_users'));
+            const rawData = snap.val();
+            const users = rawData ? Object.values(rawData) : [];
+            const user = users.find(u => u.email === email && u.pass === pass);
+            if (user) { currentUser = user; loginSuccess(); } else { showToast('Credenciales inválidas', 'error'); }
+        };
+
+        window.handleRegister = async () => {
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+            if(!name || !phone || !email || !pass) return showToast('Datos incompletos', 'error');
+            
+            const snap = await get(ref(db, 'carkkis_users'));
+            const rawData = snap.val();
+            const users = rawData ? Object.values(rawData) : [];
+            if(users.find(u => u.email === email)) return showToast('Correo existe', 'error');
+
+            const newRef = push(ref(db, 'carkkis_users'));
+            await set(newRef, { name, phone, email, pass, role: 'client' });
+            
+            currentUser = { name, phone, email, pass, role: 'client' };
+            loginSuccess();
+        };
+
+        function loginSuccess() {
+            window.closeModals(); showToast(`Bienvenido, ${currentUser.name}`, 'success');
+            const btn = document.getElementById('auth-btn');
+            btn.innerText = "Cerrar Sesión"; btn.classList.remove('btn-primary'); btn.classList.add('btn-danger');
+            
+            if(currentUser.role === 'admin') {
+                document.getElementById('public-view').classList.add('hidden');
+                document.getElementById('admin-panel').style.display = 'block';
+                loadAnalytics();
+            }
+        }
+
+        window.logout = () => {
+            currentUser = null; document.getElementById('admin-panel').style.display = 'none';
+            document.getElementById('public-view').classList.remove('hidden');
+            const btn = document.getElementById('auth-btn');
+            btn.innerText = 'Iniciar Sesión'; btn.classList.remove('btn-danger'); btn.classList.add('btn-primary');
+            showToast('Sesión cerrada', 'info');
+        };
+
+        window.switchAdminTab = (tab) => {
+            currentTab = tab;
+            document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
+            const tabEl = document.getElementById(`tab-${tab}`);
+            if(tabEl) tabEl.classList.add('active');
+            
+            ['analytics','profits','bookings','sales','services','products'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            
+            if(tab === 'analytics') loadAnalytics();
+        };
+
+        window.addNewProduct = () => {
+            const name = document.getElementById('new-prod-name').value;
+            const price = document.getElementById('new-prod-price').value;
+            const stock = document.getElementById('new-prod-stock').value;
+            const icon = document.getElementById('new-prod-icon').value || 'fa-box';
+            if(!name || !price) return showToast('Campos requeridos', 'error');
+            
+            const newRef = push(ref(db, 'carkkis_products'));
+            set(newRef, { id: Date.now(), name, price: parseInt(price), stock: parseInt(stock || 10), icon });
+            showToast('Producto agregado', 'success');
+            document.getElementById('new-prod-name').value = ''; 
+            document.getElementById('new-prod-price').value = ''; 
+            document.getElementById('new-prod-stock').value = ''; 
+            document.getElementById('new-prod-icon').value = '';
+        };
+
+        window.updateProduct = async (id) => {
+            const snap = await get(ref(db, 'carkkis_products'));
+            const products = snap.val();
+            const key = Object.keys(products).find(k => products[k].id == id);
+            if (key) {
+                const updates = {};
+                updates[`carkkis_products/${key}/name`] = document.getElementById(`prod-name-${id}`).value;
+                updates[`carkkis_products/${key}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
+                updates[`carkkis_products/${key}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
+                await update(ref(db), updates);
+                showToast('Producto actualizado', 'success');
+            }
+        };
+
+        window.deleteItem = async (path, itemId) => {
+            if(!confirm('¿Eliminar?')) return;
+            const snap = await get(ref(db, path));
+            const data = snap.val();
+            const key = Object.keys(data).find(k => data[k].id == itemId);
+            if(key) await remove(ref(db, `${path}/${key}`));
+            showToast('Eliminado', 'info');
+        };
+
+        window.updateBookingStatus = async (key, status) => {
+            await update(ref(db, `carkkis_bookings/${key}`), { status });
+            showToast('Estado actualizado', 'success');
+        };
+
+        window.updateOrderStatus = async (key, status) => {
+            await update(ref(db, `carkkis_orders/${key}`), { status });
+            showToast('Estado actualizado', 'success');
+        };
+        
+        window.addNewService = () => {
+             const name = document.getElementById('new-serv-name').value;
+             const price = document.getElementById('new-serv-price').value;
+             const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
+             if(!name || !price) return showToast('Campos requeridos', 'error');
+             const newRef = push(ref(db, 'carkkis_services'));
+             set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
+             showToast('Servicio agregado', 'success');
+             document.getElementById('new-serv-name').value=''; document.getElementById('new-serv-price').value=''; document.getElementById('new-serv-icon').value='';
+        };
+
+        window.updateService = async (id) => {
+            const snap = await get(ref(db, 'carkkis_services'));
+            const data = snap.val();
+            const key = Object.keys(data).find(k => data[k].id == id);
+            if (key) {
+                 const updates = {};
+                 updates[`carkkis_services/${key}/name`] = document.getElementById(`serv-name-${id}`).value;
+                 updates[`carkkis_services/${key}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value);
+                 await update(ref(db), updates);
+                 showToast('Servicio actualizado', 'success');
+            }
+        };
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        
+        window.openCartModal = () => {
+            if (cart.length === 0) return showToast('Carrito vacío', 'info');
+            if (!currentUser) { showToast('Inicia sesión', 'error'); return openModal('loginModal'); }
+            const list = document.getElementById('cart-items-list'); list.innerHTML = ''; let total = 0;
+            cart.forEach(i => { total += (i.price || 0); list.innerHTML += `<li><span>${i.name}</span><span>$${(i.price || 0).toLocaleString()}</span></li>`; });
+            document.getElementById('cart-total-amount').innerText = total.toLocaleString();
+            
+            const select = document.getElementById('order-payment');
+            select.innerHTML = '<option value="">Seleccione...</option>';
+            if(window.paymentLinks) {
+                Object.keys(window.paymentLinks).forEach(k => select.innerHTML += `<option value="${k}">${k}</option>`);
+            }
+            
+            document.getElementById('order-address').value = ''; document.getElementById('order-payment').value = '';
+            openModal('cartModal');
+        };
+
+        window.openBookingModal = () => {
+            if(!currentUser) { showToast('Inicia sesión', 'error'); return openModal('loginModal'); }
+            const select = document.getElementById('book-service');
+            if(select.innerHTML.trim() === '') {
+                get(ref(db, 'carkkis_services')).then(snap => {
+                    const rawData = snap.val();
+                    const s = rawData ? Object.values(rawData) : []; 
+                    s.forEach(x => { select.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
+                });
+            }
+            openModal('bookingModal');
+        };
+
+        window.selectService = (name) => {
+            window.openBookingModal();
+            setTimeout(() => document.getElementById('book-service').value = name, 100);
+        };
+
+        window.renderTimeSlots = () => {};
+
+        function loadAnalytics() {
+             document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Calculando analítica...</td></tr>';
+        }
+
+        function loadProfits(orders) {
+            const now = new Date();
+            let total = 0, count = 0;
+            orders.forEach(o => {
+                const d = new Date(o.timestamp);
+                if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+                    if(o.status === 'Confirmado') { total += (o.total || 0); count++; }
+                }
+            });
+            document.getElementById('monthly-profit').innerText = '$' + total.toLocaleString();
+            document.getElementById('monthly-orders').innerText = count;
+            
+            const tbody = document.querySelector('#profits-table tbody');
+            tbody.innerHTML = '';
+            orders.forEach(o => {
+                const d = new Date(o.timestamp);
+                if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+                    let cls = o.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
+                    tbody.innerHTML += `<tr><td>${o.dateStr}</td><td>${o.clientName}</td><td><span class="status-badge ${cls}">${o.status}</span></td><td>$${(o.total||0).toLocaleString()}</td></tr>`;
+                }
+            });
+        }
+
+        function showToast(msg, type) {
+            const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = 'toast';
+            const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+            const color = type === 'error' ? '#ef4444' : (type === 'success' ? '#10b981' : '#3b82f6');
+            t.style.borderLeftColor = color; t.innerHTML = `<i class="fas ${icon}" style="color:${color}"></i> <span>${msg}</span>`;
+            c.appendChild(t); setTimeout(() => t.remove(), 3000);
+        }
+
+        window.onload = () => {
+            console.log("Cargando aplicación...");
+            seedData();
+            setupListeners();
+        };
+        window.onclick = (e) => { if(e.target.classList.contains('modal')) window.closeModals(); };
+
+    </script>
+</body>
+</html>
