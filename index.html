@@ -262,7 +262,6 @@
                     <div class="table-container"><table id="payments-table"><thead><tr><th>Nombre</th><th>Enlace</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
                 </div>
 
-                <!-- VISTA DE SERVICIOS ADMINISTRADOR (REVISADA) -->
                 <div id="view-services" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Servicios</h2>
                     <div class="crud-grid">
@@ -286,21 +285,21 @@
                     </div>
                 </div>
 
-                <!-- GESTIÓN DE PRODUCTOS -->
+                <!-- GESTIÓN DE PRODUCTOS CON STOCK POR VARIANTE -->
                 <div id="view-products" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Inventario</h2>
                     
                     <div class="crud-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr auto;">
                         <input type="text" id="new-prod-name" placeholder="Nombre" class="admin-input">
                         <input type="number" id="new-prod-price" placeholder="Precio Base ($)" class="admin-input">
-                        <input type="number" id="new-prod-stock" placeholder="Stock" class="admin-input">
+                        <input type="number" id="new-prod-stock" placeholder="Stock General" class="admin-input">
                         <input type="text" id="new-prod-icon" placeholder="Icono" class="admin-input">
                         <button class="btn btn-primary" onclick="window.addNewProduct()">Agregar</button>
                     </div>
 
                     <div style="margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                        <label style="font-weight:600; font-size:0.9rem; color:var(--azul-oscuro);">Variantes y Precios Específicos</label>
-                        <small style="display:block; color:#64748b; margin-bottom:10px;">Si añades variantes, estos precios sobrescribirán el precio base.</small>
+                        <label style="font-weight:600; font-size:0.9rem; color:var(--azul-oscuro);">Variantes (Nombre, Precio, Stock Individual)</label>
+                        <small style="display:block; color:#64748b; margin-bottom:10px;">Cada variante tendrá su propio inventario independiente.</small>
                         <div id="variants-list"></div>
                         <button class="btn btn-sm btn-outline" onclick="window.addVariantRow()">+ Agregar Variante</button>
                     </div>
@@ -311,9 +310,9 @@
                                 <tr>
                                     <th>Icono</th>
                                     <th>Nombre</th>
-                                    <th>Precio Base</th>
-                                    <th>Stock</th>
-                                    <th>Variantes</th>
+                                    <th>Precio</th>
+                                    <th>Stock G.</th>
+                                    <th>Variantes (N:P:S)</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
@@ -415,11 +414,12 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // Actualizado: variantes ahora tienen stock propio
         const defaultData = {
             products: [ 
                 { id: 1, name: "Aceite Sintético 5W-30", price: 85000, icon: "fa-oil-can", stock: 15, options: [] }, 
-                { id: 2, name: "Filtro de Aire", price: 25000, icon: "fa-wind", stock: 3, options: [{name: "FLP-400", price: 25000}, {name: "FLP-500", price: 28000}] }, 
-                { id: 3, name: "Batería 12V", price: 450000, icon: "fa-car-battery", stock: 5, options: [{name: "50AH", price: 450000}, {name: "60AH", price: 500000}, {name: "70AH", price: 550000}] } 
+                { id: 2, name: "Filtro de Aire", price: 25000, icon: "fa-wind", stock: 0, options: [{name: "FLP-400", price: 25000, stock: 5}, {name: "FLP-500", price: 28000, stock: 2}] }, 
+                { id: 3, name: "Batería 12V", price: 450000, icon: "fa-car-battery", stock: 0, options: [{name: "50AH", price: 450000, stock: 3}, {name: "60AH", price: 500000, stock: 0}, {name: "70AH", price: 550000, stock: 1}] } 
             ],
             services: [ 
                 { id: 1, name: "Alineación y Balanceo", price: 45000, icon: "fa-car-side" }, 
@@ -525,13 +525,15 @@
             });
         }
 
-        window.addVariantRow = (name = '', price = '') => {
+        // --- AGREGAR FILA DE VARIANTE AHORA CON STOCK ---
+        window.addVariantRow = (name = '', price = '', stock = '') => {
             const container = document.getElementById('variants-list');
             const div = document.createElement('div');
             div.className = 'variant-row';
             div.innerHTML = `
-                <input type="text" placeholder="Nombre (ej. FLP-400)" class="admin-input var-name" value="${name}">
-                <input type="number" placeholder="Precio ($)" class="admin-input var-price" value="${price}" style="flex:1;">
+                <input type="text" placeholder="Nombre" class="admin-input var-name" value="${name}">
+                <input type="number" placeholder="Precio" class="admin-input var-price" value="${price}">
+                <input type="number" placeholder="Stock" class="admin-input var-stock" value="${stock}">
                 <i class="fas fa-trash remove-variant" onclick="this.parentElement.remove()"></i>
             `;
             container.appendChild(div);
@@ -544,23 +546,36 @@
             products.forEach(p => {
                 let badgeClass = 'bg-green', stockText = `Stock: ${p.stock}`, cardClass = '';
                 let displayPrice = p.price;
+                let availableOptions = [];
                 
-                if (p.options && p.options.length > 0) {
-                    const prices = p.options.map(o => o.price);
-                    const minP = Math.min(...prices);
-                    const maxP = Math.max(...prices);
-                    displayPrice = minP === maxP ? minP : `Desde $${minP.toLocaleString()}`;
+                // Lógica de Stock para Variantes
+                const hasOptions = p.options && p.options.length > 0;
+                
+                if (hasOptions) {
+                    // Filtrar opciones que tengan stock
+                    availableOptions = p.options.filter(o => o.stock > 0);
+                    
+                    if (availableOptions.length === 0) {
+                        badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock';
+                    } else {
+                        const prices = availableOptions.map(o => o.price);
+                        const minP = Math.min(...prices);
+                        const maxP = Math.max(...prices);
+                        displayPrice = minP === maxP ? minP : `Desde $${minP.toLocaleString()}`;
+                        stockText = `${availableOptions.length} Tipos disponibles`;
+                    }
                 } else {
+                    // Producto sin variantes
                     displayPrice = `$${(p.price || 0).toLocaleString()}`;
+                    if (p.stock === 0) { badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock'; } 
+                    else if (p.stock < 5) { badgeClass = 'bg-yellow'; stockText = `Últimos (${p.stock})`; }
                 }
 
                 let btn = '';
-                const hasOptions = p.options && p.options.length > 0;
                 
-                if (p.stock === 0) { badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock'; btn = `<button class="btn btn-outline btn-sm" disabled>Agotado</button>`; } 
-                else if (p.stock < 5) { badgeClass = 'bg-yellow'; stockText = `Últimos (${p.stock})`; }
-
-                if (p.stock > 0) {
+                if (cardClass === 'out-of-stock') {
+                     btn = `<button class="btn btn-outline btn-sm" disabled>Agotado</button>`;
+                } else {
                     if (hasOptions) {
                         btn = `<button class="btn btn-primary btn-sm" onclick="window.openOptionModal(${p.id})">Seleccionar</button>`;
                     } else {
@@ -588,8 +603,15 @@
             
             if(p.options && Array.isArray(p.options)) {
                 p.options.forEach(opt => {
-                    select.innerHTML += `<option value="${opt.name}">${opt.name} - $${opt.price.toLocaleString()}</option>`;
+                    // Solo mostrar opciones con stock > 0
+                    if(opt.stock > 0) {
+                        select.innerHTML += `<option value="${opt.name}">${opt.name} - $${opt.price.toLocaleString()} (${opt.stock} disp.)</option>`;
+                    }
                 });
+            }
+            
+            if(select.innerHTML === '') {
+                select.innerHTML = '<option value="">Sin stock disponible</option>';
             }
             
             window.openModal('optionModal');
@@ -602,12 +624,15 @@
             if (!selectedName || !pendingProduct) return;
 
             const selectedOption = pendingProduct.options.find(o => o.name === selectedName);
-            const specificPrice = selectedOption ? selectedOption.price : pendingProduct.price;
+            if(!selectedOption) return;
 
             const cartItem = { 
                 ...pendingProduct, 
                 selectedOption: selectedName,
-                price: specificPrice 
+                // Guardamos los datos exactos de la opción para no depender de la DB en el carrito
+                variantId: selectedOption.name, // Usamos el nombre como ID temporal simple
+                price: selectedOption.price,
+                originalStockRef: { productId: pendingProduct.id, optionName: selectedName }
             };
             
             cart.push(cartItem);
@@ -625,8 +650,9 @@
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
+                    // Formato: Nombre:Precio:Stock
                     const optionsStr = (p.options && Array.isArray(p.options)) 
-                        ? p.options.map(o => `${o.name}:${o.price}`).join(', ') 
+                        ? p.options.map(o => `${o.name}:${o.price}:${o.stock}`).join(', ') 
                         : '';
                     
                     tbody.innerHTML += `
@@ -635,10 +661,10 @@
                             <td><input type="text" value="${p.name}" id="prod-name-${p.id}" class="admin-input"></td>
                             <td><input type="number" value="${p.price || 0}" id="prod-price-${p.id}" class="table-input"></td>
                             <td><input type="number" value="${p.stock || 0}" id="prod-stock-${p.id}" class="table-input" min="0"></td>
-                            <td><input type="text" value="${optionsStr}" id="prod-options-${p.id}" placeholder="Ej: A:100, B:200" class="table-input" style="width:200px; font-size: 0.8rem;"></td>
+                            <td><input type="text" value="${optionsStr}" id="prod-options-${p.id}" placeholder="N:P:S" class="table-input" style="width:200px; font-size: 0.8rem;"></td>
                             <td>
-                                <button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}')"><i class="fas fa-save"></i></button> 
-                                <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_products', '${p.id}')"><i class="fas fa-trash"></i></button>
+                                <button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}', '${key}')"><i class="fas fa-save"></i></button> 
+                                <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_products', '${key}')"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>`;
                 }
@@ -658,8 +684,9 @@
             variantRows.forEach(row => {
                 const vName = row.querySelector('.var-name').value.trim();
                 const vPrice = row.querySelector('.var-price').value;
+                const vStock = row.querySelector('.var-stock').value;
                 if(vName && vPrice) {
-                    optionsArr.push({ name: vName, price: parseInt(vPrice) });
+                    optionsArr.push({ name: vName, price: parseInt(vPrice), stock: parseInt(vStock || 0) });
                 }
             });
             
@@ -674,51 +701,51 @@
             document.getElementById('variants-list').innerHTML = '';
         };
 
-        window.updateProduct = async (id) => {
+        window.updateProduct = async (id, firebaseKey) => {
+            if(!firebaseKey) return showToast('Error clave', 'error');
+            
             const snap = await get(ref(db, 'carkkis_products'));
             const products = snap.val();
-            const key = Object.keys(products).find(k => products[k].id == id);
-            if (key) {
-                const updates = {};
-                updates[`carkkis_products/${key}/name`] = document.getElementById(`prod-name-${id}`).value;
-                updates[`carkkis_products/${key}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
-                updates[`carkkis_products/${key}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
-                
-                const optionsStr = document.getElementById(`prod-options-${id}`).value;
-                let optionsArr = [];
-                if(optionsStr.trim()) {
-                    const parts = optionsStr.split(',');
-                    parts.forEach(part => {
-                        const subParts = part.split(':');
-                        if(subParts.length === 2) {
-                            optionsArr.push({ name: subParts[0].trim(), price: parseInt(subParts[1].trim()) });
-                        }
-                    });
-                }
-                updates[`carkkis_products/${key}/options`] = optionsArr;
+            const currentProduct = products[firebaseKey];
+            
+            if (!currentProduct) return;
 
-                await update(ref(db), updates);
-                showToast('Producto actualizado', 'success');
+            const updates = {};
+            updates[`carkkis_products/${firebaseKey}/name`] = document.getElementById(`prod-name-${id}`).value;
+            updates[`carkkis_products/${firebaseKey}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
+            updates[`carkkis_products/${firebaseKey}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
+            
+            // Parsear string de opciones: Nombre:Precio:Stock
+            const optionsStr = document.getElementById(`prod-options-${id}`).value;
+            let optionsArr = [];
+            if(optionsStr.trim()) {
+                const parts = optionsStr.split(',');
+                parts.forEach(part => {
+                    const subParts = part.split(':');
+                    // Manejo flexible para datos viejos (solo Precio) vs nuevos (Precio:Stock)
+                    if(subParts.length >= 2) {
+                        const name = subParts[0].trim();
+                        const price = parseInt(subParts[1].trim());
+                        const stock = subParts.length >= 3 ? parseInt(subParts[2].trim()) : 10; // Default 10 si no hay stock
+                        optionsArr.push({ name, price, stock });
+                    }
+                });
             }
+            updates[`carkkis_products/${firebaseKey}/options`] = optionsArr;
+
+            await update(ref(db), updates);
+            showToast('Producto actualizado', 'success');
         };
 
-        // --- FUNCIONES DE SERVICIOS (VERIFICADAS) ---
+        // --- FUNCIONES DE SERVICIOS ---
         window.renderAdminServices = (rawData) => {
             const tbody = document.querySelector('#services-table tbody');
-            if(!tbody) return; // Seguridad extra
-            tbody.innerHTML = '';
-            
-            if (!rawData) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">No hay servicios registrados</td></tr>';
-                return;
-            }
-
+            if(!tbody) return; tbody.innerHTML = '';
+            if (!rawData) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay servicios</td></tr>'; return; }
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const s = rawData[key];
-                    // Asegurarse de que s.id existe, si no usar key
                     const safeId = s.id || key; 
-                    
                     tbody.innerHTML += `
                         <tr>
                             <td><i class="fas ${s.icon || 'fa-tools'}"></i></td>
@@ -732,38 +759,27 @@
                 }
             }
         };
-
         window.addNewService = () => {
             const name = document.getElementById('new-serv-name').value;
             const price = document.getElementById('new-serv-price').value;
             const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
-            
-            if(!name || !price) return showToast('El nombre y el precio son obligatorios', 'error');
-            
+            if(!name || !price) return showToast('Datos incompletos', 'error');
             const newRef = push(ref(db, 'carkkis_services'));
             set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
-            
             showToast('Servicio agregado', 'success');
-            document.getElementById('new-serv-name').value=''; 
-            document.getElementById('new-serv-price').value=''; 
-            document.getElementById('new-serv-icon').value='';
+            document.getElementById('new-serv-name').value=''; document.getElementById('new-serv-price').value=''; document.getElementById('new-serv-icon').value='';
         };
-
         window.updateService = async (id, firebaseKey) => {
-            if(!firebaseKey) return showToast('Error clave de servicio', 'error');
-            
+            if(!firebaseKey) return showToast('Error', 'error');
             const updates = {};
             updates[`carkkis_services/${firebaseKey}/name`] = document.getElementById(`serv-name-${id}`).value;
             updates[`carkkis_services/${firebaseKey}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value);
-            
             await update(ref(db), updates);
             showToast('Servicio actualizado', 'success');
         };
-
         window.renderPublicServices = (services) => {
             const container = document.getElementById('public-services-grid');
-            if(!container) return;
-            container.innerHTML = '';
+            if(!container) return; container.innerHTML = '';
             if(!Array.isArray(services)) return;
             services.forEach(s => {
                 container.innerHTML += `<div class="product-card" onclick="window.selectService('${s.name}')"><div class="product-img"><i class="fas ${s.icon || 'fa-wrench'} fa-2x"></i></div><h3>${s.name}</h3><span class="product-price">$${(s.price || 0).toLocaleString()}</span></div>`;
@@ -818,11 +834,16 @@
             const rawData = snap.val();
             const products = rawData ? Object.values(rawData) : [];
             const p = products.find(x => x.id == id);
-            if (p && p.stock > 0) {
+            // Solo productos sin variantes usan esta función
+            if (p && (!p.options || p.options.length === 0) && p.stock > 0) {
                 cart.push(p);
                 document.getElementById('cart-count').innerText = cart.length;
                 showToast(`Agregado: ${p.name}`, 'success');
-            } else { showToast('Agotado', 'error'); }
+            } else if (p && p.options && p.options.length > 0) {
+                showToast('Por favor selecciona una variante', 'info');
+            } else { 
+                showToast('Agotado', 'error'); 
+            }
         };
 
         window.openCartModal = async () => {
@@ -849,6 +870,7 @@
             window.openModal('cartModal');
         };
 
+        // --- LÓGICA DE ACTUALIZACIÓN DE STOCK POR VARIANTE ---
         window.confirmPurchase = async () => {
             const clientName = document.getElementById('order-name').value;
             const clientPhone = document.getElementById('order-phone').value;
@@ -862,13 +884,29 @@
             const products = productsSnap.val();
             const updates = {};
 
-            cart.forEach(cartItem => {
+            for (const cartItem of cart) {
                 const productKey = Object.keys(products).find(key => products[key].id == cartItem.id);
-                if(productKey && products[productKey].stock > 0) {
-                    products[productKey].stock -= 1;
-                    updates['carkkis_products/' + productKey] = products[productKey];
+                
+                if (productKey) {
+                    const product = products[productKey];
+                    
+                    if (cartItem.selectedOption) {
+                        // Es una variante: buscar y restar stock específico
+                        const optionIndex = product.options.findIndex(o => o.name === cartItem.selectedOption);
+                        if (optionIndex > -1 && product.options[optionIndex].stock > 0) {
+                            product.options[optionIndex].stock -= 1;
+                            // Guardamos todo el objeto producto modificado (Firebase Arrays updates son complejos, sobreescribir es seguro aquí)
+                            updates[`carkkis_products/${productKey}`] = product;
+                        }
+                    } else {
+                        // Es producto normal
+                        if(product.stock > 0) {
+                            product.stock -= 1;
+                            updates[`carkkis_products/${productKey}`] = product;
+                        }
+                    }
                 }
-            });
+            }
 
             const total = cart.reduce((s,i) => s + (i.price || 0), 0);
             const newOrderRef = push(ref(db, 'carkkis_orders'));
@@ -976,7 +1014,6 @@
             });
             const viewEl = document.getElementById(`view-${tab}`);
             if(viewEl) viewEl.classList.remove('hidden');
-            
             if(tab === 'analytics') loadAnalytics();
         };
         window.deleteItem = async (path, key) => {
