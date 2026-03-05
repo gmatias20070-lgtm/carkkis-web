@@ -26,7 +26,10 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--blanco); color: var(--negro); line-height: 1.6; overflow-x: hidden; }
-        a { text-decoration: none; color: inherit; transition: 0.3s; cursor: pointer; }
+        /* CORRECCIÓN: Quitamos la regla global 'a' y creamos una clase específica para navegación */
+        .nav-link { text-decoration: none; color: inherit; transition: 0.3s; cursor: pointer; font-weight: 500; color: #cbd5e1; }
+        .nav-link:hover { color: white; }
+        
         ul { list-style: none; }
         img { max-width: 100%; display: block; }
 
@@ -41,7 +44,7 @@
         .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: var(--gris-texto); }
         .btn-outline:hover { border-color: var(--azul-acento); color: var(--azul-acento); }
         .btn-sm { padding: 5px 12px; font-size: 0.85rem; }
-        .btn-link { background: none; color: var(--azul-acento); padding: 0; text-decoration: underline; }
+        .btn-link { background: none; color: var(--azul-acento); padding: 0; text-decoration: underline; cursor: pointer;}
         
         .section-title { font-size: 2rem; font-weight: 800; color: var(--azul-oscuro); text-align: center; margin-bottom: 1rem; text-transform: uppercase; }
         section { padding: 60px 0; }
@@ -52,7 +55,6 @@
         .logo { font-size: 1.5rem; font-weight: 900; display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .logo span { color: var(--azul-acento); }
         nav ul { display: flex; gap: 20px; }
-        nav ul li a { font-weight: 500; color: #cbd5e1; }
         .nav-actions { display: flex; gap: 10px; align-items: center; }
         .cart-icon { position: relative; cursor: pointer; font-size: 1.2rem; margin-right: 10px; }
         .cart-badge { position: absolute; top: -8px; right: -8px; background-color: var(--azul-acento); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 50%; font-weight: bold; }
@@ -105,6 +107,11 @@
         .crud-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .table-input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; width: 80px; }
 
+        /* --- VARIANTES BUILDER --- */
+        .variant-row { display: flex; gap: 10px; margin-bottom: 5px; }
+        .variant-row input { flex: 1; }
+        .remove-variant { color: var(--peligro); cursor: pointer; padding: 5px; }
+
         /* --- MODALES --- */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; position: relative; animation: slideDown 0.3s; max-height: 90vh; overflow-y: auto; }
@@ -144,6 +151,7 @@
 </head>
 <body>
 
+    <!-- VISTA PÚBLICA -->
     <div id="public-view">
         <header>
             <div class="container nav-container">
@@ -152,9 +160,10 @@
                 </div>
                 <nav>
                     <ul>
-                        <li><a onclick="window.showSection('home')">Inicio</a></li>
-                        <li><a onclick="window.showSection('store')">Tienda</a></li>
-                        <li><a onclick="window.showSection('services')">Servicios</a></li>
+                        <!-- CAMBIO CRÍTICO: Usamos <span> con clase .nav-link en lugar de <a> -->
+                        <li><span class="nav-link" onclick="window.showSection('home')">Inicio</span></li>
+                        <li><span class="nav-link" onclick="window.showSection('store')">Tienda</span></li>
+                        <li><span class="nav-link" onclick="window.showSection('services')">Servicios</span></li>
                     </ul>
                 </nav>
                 <div class="nav-actions">
@@ -209,6 +218,10 @@
             <aside class="admin-sidebar">
                 <h2><i class="fas fa-cogs"></i> Admin Panel</h2>
                 <ul class="sidebar-menu">
+                    <li onclick="window.showPublicView()" style="background-color: var(--exito); color: white; margin-bottom: 20px;">
+                        <i class="fas fa-store"></i> Ver Tienda Pública
+                    </li>
+                    
                     <li onclick="window.switchAdminTab('payments')" id="tab-payments"><i class="fas fa-credit-card"></i> Pagos</li>
                     <li onclick="window.switchAdminTab('analytics')" id="tab-analytics"><i class="fas fa-chart-line"></i> Analítica</li>
                     <li onclick="window.switchAdminTab('profits')" id="tab-profits"><i class="fas fa-money-bill-wave"></i> Ganancias</li>
@@ -236,37 +249,20 @@
                 
                 <div id="view-payments" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Enlaces de Pago</h2>
-                    
-                    <!-- BOTÓN DE LIMPIEZA NUEVO -->
                     <div style="margin-bottom: 15px;">
                         <button class="btn btn-danger btn-sm" onclick="window.cleanUndefinedPayments()">
                             <i class="fas fa-broom"></i> Limpiar Registros Vacíos
                         </button>
-                        <small style="color: #64748b; margin-left: 10px;">Elimina automáticamente los ejemplos o datos corruptos.</small>
                     </div>
-
                     <div class="note-warning" style="margin-bottom: 20px;">
                         Estos enlaces se mostrarán al cliente al finalizar un pedido.
                     </div>
-                    
                     <div class="crud-grid" style="grid-template-columns: 1fr 2fr auto;">
                         <input type="text" id="new-pay-name" placeholder="Nombre (ej. Nequi)" class="admin-input">
-                        <input type="text" id="new-pay-link" placeholder="URL del enlace (ej. https://nequi...)" class="admin-input">
+                        <input type="text" id="new-pay-link" placeholder="URL del enlace" class="admin-input">
                         <button class="btn btn-primary" onclick="window.addNewPayment()">Agregar</button>
                     </div>
-
-                    <div class="table-container">
-                        <table id="payments-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Enlace</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+                    <div class="table-container"><table id="payments-table"><thead><tr><th>Nombre</th><th>Enlace</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
                 </div>
 
                 <div id="view-services" class="hidden">
@@ -280,22 +276,25 @@
                     <div class="table-container"><table id="services-table"><thead><tr><th>Icono</th><th>Nombre</th><th>Precio</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
                 </div>
                 
-                <!-- GESTIÓN DE PRODUCTOS CON OPCIONES -->
+                <!-- GESTIÓN DE PRODUCTOS CON PRECIO POR VARIANTE -->
                 <div id="view-products" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Inventario</h2>
-                    <!-- Formulario de Agregar con Campo de Opciones -->
+                    
+                    <!-- Formulario Principal -->
                     <div class="crud-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr auto;">
                         <input type="text" id="new-prod-name" placeholder="Nombre" class="admin-input">
-                        <input type="number" id="new-prod-price" placeholder="Precio ($)" class="admin-input">
+                        <input type="number" id="new-prod-price" placeholder="Precio Base ($)" class="admin-input">
                         <input type="number" id="new-prod-stock" placeholder="Stock" class="admin-input">
                         <input type="text" id="new-prod-icon" placeholder="Icono" class="admin-input">
                         <button class="btn btn-primary" onclick="window.addNewProduct()">Agregar</button>
                     </div>
-                    <!-- Campo Extra para Opciones -->
+
+                    <!-- Constructor Dinámico de Variantes -->
                     <div style="margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                        <label style="font-weight:600; font-size:0.9rem; color:var(--azul-oscuro);">Opciones / Modelos (Separados por coma)</label>
-                        <input type="text" id="new-prod-options" placeholder="Ej: FLP-400, FLP-500, 50AH" class="admin-input" style="margin-top:5px;">
-                        <small style="color:#64748b;">Si dejas esto vacío, el cliente no podrá seleccionar un modelo específico.</small>
+                        <label style="font-weight:600; font-size:0.9rem; color:var(--azul-oscuro);">Variantes y Precios Específicos</label>
+                        <small style="display:block; color:#64748b; margin-bottom:10px;">Si añades variantes, estos precios sobrescribirán el precio base.</small>
+                        <div id="variants-list"></div>
+                        <button class="btn btn-sm btn-outline" onclick="window.addVariantRow()">+ Agregar Variante</button>
                     </div>
                     
                     <div class="table-container">
@@ -304,9 +303,9 @@
                                 <tr>
                                     <th>Icono</th>
                                     <th>Nombre</th>
-                                    <th>Precio</th>
+                                    <th>Precio Base</th>
                                     <th>Stock</th>
-                                    <th>Opciones</th> <!-- NUEVA COLUMNA -->
+                                    <th>Variantes (Nombre:Precio)</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
@@ -326,10 +325,7 @@
             <div class="form-group"><label>Correo</label><input type="email" id="login-email" class="modal-input"></div>
             <div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" class="modal-input"></div>
             <button class="btn btn-primary" style="width:100%" onclick="window.handleLogin()">Ingresar</button>
-            <div style="text-align:center; margin-top:15px; font-size:0.9rem;">
-                ¿No tienes cuenta? <a onclick="window.closeModals(); window.openModal('registerModal');" class="btn-link">Regístrate aquí</a>
-            </div>
-            <small style="display:block; text-align:center; margin-top:10px; color:#64748b;">carkkis.com</small>
+            <div style="text-align:center; margin-top:15px; font-size:0.9rem;">¿No tienes cuenta? <span class="btn-link" onclick="window.closeModals(); window.openModal('registerModal');">Regístrate aquí</span></div>
         </div>
     </div>
     
@@ -342,13 +338,9 @@
             <div class="form-group"><label>Correo</label><input type="email" id="reg-email" class="modal-input"></div>
             <div class="form-group"><label>Contraseña</label><input type="password" id="reg-pass" class="modal-input"></div>
             <button class="btn btn-primary" style="width:100%" onclick="window.handleRegister()">Registrarse</button>
-            <div style="text-align:center; margin-top:15px; font-size:0.9rem;">
-                ¿Ya tienes cuenta? <a onclick="window.closeModals(); window.openModal('loginModal');" class="btn-link">Inicia sesión</a>
-            </div>
         </div>
     </div>
 
-    <!-- MODAL DE SELECCIÓN DE OPCIÓN (NUEVO) -->
     <div id="optionModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="window.closeModals()">&times;</span>
@@ -370,58 +362,11 @@
                 <ul id="cart-items-list"></ul>
                 <div class="cart-total-display">Total: $<span id="cart-total-amount">0</span></div>
             </div>
-            
-            <div class="form-group">
-                <label>Nombre Completo *</label>
-                <input type="text" id="order-name" class="modal-input" placeholder="Tu nombre">
-            </div>
-            <div class="form-group">
-                <label>Teléfono / WhatsApp *</label>
-                <input type="tel" id="order-phone" class="modal-input" placeholder="Tu teléfono">
-            </div>
-            
-            <!-- CAMPOS DE DIRECCIÓN -->
-            <div class="form-group">
-                <label>Ciudad de Envío *</label>
-                <select id="order-city" class="modal-input">
-                    <option value="">Seleccione su ciudad...</option>
-                    <option value="Bogotá D.C.">Bogotá D.C.</option>
-                    <option value="Medellín">Medellín</option>
-                    <option value="Cali">Cali</option>
-                    <option value="Barranquilla">Barranquilla</option>
-                    <option value="Cartagena">Cartagena</option>
-                    <option value="Cúcuta">Cúcuta</option>
-                    <option value="Bucaramanga">Bucaramanga</option>
-                    <option value="Pereira">Pereira</option>
-                    <option value="Santa Marta">Santa Marta</option>
-                    <option value="Ibagué">Ibagué</option>
-                    <option value="Pasto">Pasto</option>
-                    <option value="Villavicencio">Villavicencio</option>
-                    <option value="Manizales">Manizales</option>
-                    <option value="Neiva">Neiva</option>
-                    <option value="Armenia">Armenia</option>
-                    <option value="Valledupar">Valledupar</option>
-                    <option value="Montería">Montería</option>
-                    <option value="Sincelejo">Sincelejo</option>
-                    <option value="Popayán">Popayán</option>
-                    <option value="Tunja">Tunja</option>
-                    <option value="Riohacha">Riohacha</option>
-                    <option value="Florencia">Florencia</option>
-                    <option value="Mocoa">Mocoa</option>
-                    <option value="Yopal">Yopal</option>
-                    <option value="Quibdó">Quibdó</option>
-                    <option value="Mitú">Mitú</option>
-                    <option value="Inírida">Inírida</option>
-                    <option value="Puerto Carreño">Puerto Carreño</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Dirección Específica (Barrio/Calle) *</label>
-                <input type="text" id="order-address-detail" class="modal-input" placeholder="Ej: Calle 123 # 4-56, Apto 302">
-            </div>
-
+            <div class="form-group"><label>Nombre Completo *</label><input type="text" id="order-name" class="modal-input"></div>
+            <div class="form-group"><label>Teléfono / WhatsApp *</label><input type="tel" id="order-phone" class="modal-input"></div>
+            <div class="form-group"><label>Ciudad de Envío *</label><select id="order-city" class="modal-input"><option value="">Seleccione...</option><option value="Bogotá">Bogotá</option><option value="Medellín">Medellín</option><option value="Cali">Cali</option><option value="Barranquilla">Barranquilla</option></select></div>
+            <div class="form-group"><label>Dirección *</label><input type="text" id="order-address-detail" class="modal-input"></div>
             <div class="form-group"><label>Método de Pago *</label><select id="order-payment" class="modal-input"></select></div>
-            <div class="note-warning">Redirigido al pago tras confirmar.</div>
             <button class="btn btn-primary" style="width:100%" onclick="window.confirmPurchase()">Confirmar Pedido</button>
         </div>
     </div>
@@ -431,31 +376,11 @@
             <span class="close-modal" onclick="window.closeModals()">&times;</span>
             <h2>Agendar Cita</h2>
             <form onsubmit="window.submitBooking(event)">
-                <!-- Campos de datos del cliente -->
-                <div class="form-group">
-                    <label>Nombre Completo *</label>
-                    <input type="text" id="book-name" class="modal-input" required>
-                </div>
-                <div class="form-group">
-                    <label>Teléfono *</label>
-                    <input type="tel" id="book-phone" class="modal-input" required>
-                </div>
-
+                <div class="form-group"><label>Nombre *</label><input type="text" id="book-name" class="modal-input" required></div>
+                <div class="form-group"><label>Teléfono *</label><input type="tel" id="book-phone" class="modal-input" required></div>
                 <div class="form-group"><label>Placa</label><input type="text" id="book-plate" class="modal-input" required></div>
                 <div class="form-group"><label>Servicio</label><select id="book-service" class="modal-input" required></select></div>
-                
-                <!-- NUEVO CAMPO: TIPO DE FALLA / NOTA -->
-                <div class="form-group">
-                    <label>Tipo de Falla / Nota</label>
-                    <select id="book-issue" class="modal-input" required>
-                        <option value="general">Mantenimiento General / Otros</option>
-                        <option value="ruidos">Ruidos</option>
-                        <option value="electrico">Fallas Eléctricas</option>
-                        <option value="largo">Reparaciones Largas</option>
-                    </select>
-                    <small style="color: #64748b; font-size: 0.75rem;">Si seleccionas Ruidos, Eléctrico o Largo, no podrás agendar el sábado.</small>
-                </div>
-
+                <div class="form-group"><label>Falla</label><select id="book-issue" class="modal-input" required><option value="general">General</option><option value="ruidos">Ruidos</option><option value="electrico">Eléctrico</option><option value="largo">Largo</option></select></div>
                 <div class="form-group"><label>Fecha</label><input type="date" id="book-date" class="modal-input" required></div>
                 <div class="form-group"><label>Hora</label><select id="book-time" class="modal-input" required></select></div>
                 <button type="submit" class="btn btn-primary" style="width:100%;">Agendar</button>
@@ -464,7 +389,7 @@
     </div>
     <div id="toast-container"></div>
 
-    <!-- ================= LÓGICA JAVASCRIPT (FINAL CORREGIDO) ================= -->
+    <!-- ================= LÓGICA JAVASCRIPT ================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -484,10 +409,9 @@
 
         const defaultData = {
             products: [ 
-                // Ejemplo actualizado con opciones
                 { id: 1, name: "Aceite Sintético 5W-30", price: 85000, icon: "fa-oil-can", stock: 15, options: [] }, 
-                { id: 2, name: "Filtro de Aire", price: 25000, icon: "fa-wind", stock: 3, options: ["FLP-400", "FLP-500", "FLP-600"] }, 
-                { id: 3, name: "Batería 12V", price: 450000, icon: "fa-car-battery", stock: 5, options: ["50AH", "60AH", "70AH"] } 
+                { id: 2, name: "Filtro de Aire", price: 25000, icon: "fa-wind", stock: 3, options: [{name: "FLP-400", price: 25000}, {name: "FLP-500", price: 28000}] }, 
+                { id: 3, name: "Batería 12V", price: 450000, icon: "fa-car-battery", stock: 5, options: [{name: "50AH", price: 450000}, {name: "60AH", price: 500000}, {name: "70AH", price: 550000}] } 
             ],
             services: [ 
                 { id: 1, name: "Alineación y Balanceo", price: 45000, icon: "fa-car-side" }, 
@@ -496,49 +420,72 @@
                 { id: 4, name: "Mantenimiento General", price: 120000, icon: "fa-tools" } 
             ],
             users: [{ name: "Administrador", email: "admin@carkkis.com", pass: "admin123", role: "admin", phone: "0000000" }],
-            payment_links: [ 
-                { id: 1, name: "Nequi", url: "https://nequi.com" }, 
-                { id: 2, name: "Daviplata", url: "https://daviplata.com" } 
-            ]
+            payment_links: [ { id: 1, name: "Nequi", url: "https://nequi.com" }, { id: 2, name: "Daviplata", url: "https://daviplata.com" } ]
         };
 
         let cart = [];
         let currentUser = null;
         let currentTab = 'analytics';
-        let pendingProduct = null; // Para guardar el producto mientras el usuario elige opción
+        let pendingProduct = null;
+
+        // --- FUNCIÓN NAVEGACIÓN ---
+        window.showSection = (id) => {
+            console.log("Navegando a:", id); // Debug en consola
+            const home = document.getElementById('home');
+            const store = document.getElementById('store');
+            const services = document.getElementById('services');
+
+            if(home) home.classList.add('hidden');
+            if(store) store.classList.add('hidden');
+            if(services) services.classList.add('hidden');
+
+            const target = document.getElementById(id);
+            if(target) {
+                target.classList.remove('hidden');
+                window.scrollTo(0,0);
+            }
+        };
+
+        window.showPublicView = () => {
+            currentUser = null;
+            document.getElementById('admin-panel').style.display = 'none';
+            document.getElementById('public-view').classList.remove('hidden');
+            window.showSection('home');
+            
+            const btn = document.getElementById('auth-btn');
+            btn.innerText = 'Iniciar Sesión'; 
+            btn.classList.remove('btn-danger'); 
+            btn.classList.add('btn-primary');
+            const regBtn = document.getElementById('reg-btn-nav');
+            if(regBtn) regBtn.style.display = 'inline-block';
+            showToast('Modo cliente activado', 'info');
+        };
 
         window.resetDB = async () => {
-            if(!confirm("ADVERTENCIA: ¿Estás seguro de RESETEAR la base de datos? Se perderán todos los pedidos y usuarios nuevos.")) return;
+            if(!confirm("ADVERTENCIA: ¿Estás seguro de RESETEAR la base de datos?")) return;
             try {
-                console.log("Reseteando base de datos...");
                 await set(ref(db, 'carkkis_products'), defaultData.products);
                 await set(ref(db, 'carkkis_services'), defaultData.services);
                 await set(ref(db, 'carkkis_users'), defaultData.users);
                 await set(ref(db, 'carkkis_payment_links'), defaultData.payment_links);
                 await set(ref(db, 'carkkis_orders'), null); 
                 await set(ref(db, 'carkkis_bookings'), null);
-                window.showToast("Base de datos restaurada correctamente", "success");
-            } catch (e) {
-                console.error(e);
-                window.showToast("Error al resetear: " + e.message, "error");
-            }
+                window.showToast("Base de datos restaurada", "success");
+            } catch (e) { window.showToast("Error: " + e.message, "error"); }
         };
 
         async function seedData() {
             try {
                 const snap = await get(ref(db, 'carkkis_products'));
                 if (!snap.exists()) {
-                    console.log("Inicializando base de datos por primera vez...");
                     await set(ref(db, 'carkkis_products'), defaultData.products);
                     await set(ref(db, 'carkkis_services'), defaultData.services);
                     await set(ref(db, 'carkkis_users'), defaultData.users);
                     await set(ref(db, 'carkkis_payment_links'), defaultData.payment_links);
                     await set(ref(db, 'carkkis_orders'), null); 
                     await set(ref(db, 'carkkis_bookings'), null);
-                } else {
-                    console.log("Base de datos ya existe. Saltando inicialización.");
                 }
-            } catch (e) { console.error("Error inicializando DB:", e); }
+            } catch (e) { console.error("Error DB:", e); }
         }
 
         function setupListeners() {
@@ -548,26 +495,22 @@
                 window.renderPublicStore(data);
                 window.renderAdminProducts(rawData);
             });
-
             onValue(ref(db, 'carkkis_services'), (snap) => {
                 const rawData = snap.val();
                 const data = rawData ? Object.values(rawData) : [];
                 window.renderPublicServices(data);
                 window.renderAdminServices(rawData);
             });
-
             onValue(ref(db, 'carkkis_bookings'), (snap) => {
                 const data = snap.val() ? Object.values(snap.val()) : [];
                 window.renderAdminBookings(data);
                 if(currentTab === 'analytics') loadAnalytics();
             });
-
             onValue(ref(db, 'carkkis_orders'), (snap) => {
                 const data = snap.val() ? Object.values(snap.val()) : [];
                 window.renderAdminSales(data);
                 loadProfits(data);
             });
-
             onValue(ref(db, 'carkkis_payment_links'), (snap) => {
                 const rawData = snap.val();
                 window.paymentLinks = rawData ? Object.values(rawData) : [];
@@ -575,12 +518,16 @@
             });
         }
 
-        window.showSection = (id) => {
-            document.getElementById('home').classList.add('hidden');
-            document.getElementById('store').classList.add('hidden');
-            document.getElementById('services').classList.add('hidden');
-            document.getElementById(id).classList.remove('hidden');
-            window.scrollTo(0,0);
+        window.addVariantRow = (name = '', price = '') => {
+            const container = document.getElementById('variants-list');
+            const div = document.createElement('div');
+            div.className = 'variant-row';
+            div.innerHTML = `
+                <input type="text" placeholder="Nombre (ej. FLP-400)" class="admin-input var-name" value="${name}">
+                <input type="number" placeholder="Precio ($)" class="admin-input var-price" value="${price}" style="flex:1;">
+                <i class="fas fa-trash remove-variant" onclick="this.parentElement.remove()"></i>
+            `;
+            container.appendChild(div);
         };
 
         window.renderPublicStore = (products) => {
@@ -589,17 +536,22 @@
             if(!Array.isArray(products)) return;
             products.forEach(p => {
                 let badgeClass = 'bg-green', stockText = `Stock: ${p.stock}`, cardClass = '';
+                let displayPrice = p.price;
                 
-                // Lógica de botón según opciones
-                let btn = '';
-                const hasOptions = p.options && Array.isArray(p.options) && p.options.length > 0;
-                
-                if (p.stock === 0) { 
-                    badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock'; 
-                    btn = `<button class="btn btn-outline btn-sm" disabled>Agotado</button>`; 
-                } else if (p.stock < 5) { 
-                    badgeClass = 'bg-yellow'; stockText = `Últimos (${p.stock})`; 
+                if (p.options && p.options.length > 0) {
+                    const prices = p.options.map(o => o.price);
+                    const minP = Math.min(...prices);
+                    const maxP = Math.max(...prices);
+                    displayPrice = minP === maxP ? minP : `Desde $${minP.toLocaleString()}`;
+                } else {
+                    displayPrice = `$${(p.price || 0).toLocaleString()}`;
                 }
+
+                let btn = '';
+                const hasOptions = p.options && p.options.length > 0;
+                
+                if (p.stock === 0) { badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock'; btn = `<button class="btn btn-outline btn-sm" disabled>Agotado</button>`; } 
+                else if (p.stock < 5) { badgeClass = 'bg-yellow'; stockText = `Últimos (${p.stock})`; }
 
                 if (p.stock > 0) {
                     if (hasOptions) {
@@ -609,11 +561,10 @@
                     }
                 }
 
-                container.innerHTML += `<div class="product-card ${cardClass}"><div class="product-img"><i class="fas ${p.icon || 'fa-box'} fa-2x"></i></div><h3>${p.name}</h3><span class="product-price">$${(p.price || 0).toLocaleString()}</span><span class="stock-info"><span class="stock-badge ${badgeClass}">${stockText}</span></span>${btn}</div>`;
+                container.innerHTML += `<div class="product-card ${cardClass}"><div class="product-img"><i class="fas ${p.icon || 'fa-box'} fa-2x"></i></div><h3>${p.name}</h3><span class="product-price">${typeof displayPrice === 'number' ? '$'+displayPrice.toLocaleString() : displayPrice}</span><span class="stock-info"><span class="stock-badge ${badgeClass}">${stockText}</span></span>${btn}</div>`;
             });
         };
 
-        // --- LÓGICA DE MODAL DE OPCIONES ---
         window.openOptionModal = async (id) => {
             const snap = await get(ref(db, 'carkkis_products'));
             const rawData = snap.val();
@@ -630,7 +581,7 @@
             
             if(p.options && Array.isArray(p.options)) {
                 p.options.forEach(opt => {
-                    select.innerHTML += `<option value="${opt}">${opt}</option>`;
+                    select.innerHTML += `<option value="${opt.name}">${opt.name} - $${opt.price.toLocaleString()}</option>`;
                 });
             }
             
@@ -639,72 +590,35 @@
 
         window.confirmOptionSelection = () => {
             const select = document.getElementById('product-option-select');
-            const selectedOption = select.value;
+            const selectedName = select.value;
             
-            if (!selectedOption || !pendingProduct) return;
+            if (!selectedName || !pendingProduct) return;
 
-            // Clonamos el objeto para no afectar la referencia original y añadimos la opción
-            const cartItem = { ...pendingProduct, selectedOption: selectedOption };
+            const selectedOption = pendingProduct.options.find(o => o.name === selectedName);
+            const specificPrice = selectedOption ? selectedOption.price : pendingProduct.price;
+
+            const cartItem = { 
+                ...pendingProduct, 
+                selectedOption: selectedName,
+                price: specificPrice 
+            };
+            
             cart.push(cartItem);
-            
             document.getElementById('cart-count').innerText = cart.length;
-            showToast(`Agregado: ${pendingProduct.name} (${selectedOption})`, 'success');
-            
+            showToast(`Agregado: ${pendingProduct.name} (${selectedName})`, 'success');
             pendingProduct = null;
             window.closeModals();
         };
 
-        window.renderPublicServices = (services) => {
-            const container = document.getElementById('public-services-grid');
-            container.innerHTML = '';
-            if(!Array.isArray(services)) return;
-            services.forEach(s => {
-                container.innerHTML += `<div class="product-card" onclick="window.selectService('${s.name}')"><div class="product-img"><i class="fas ${s.icon || 'fa-wrench'} fa-2x"></i></div><h3>${s.name}</h3><span class="product-price">$${(s.price || 0).toLocaleString()}</span></div>`;
-            });
-        };
-
-        window.renderAdminBookings = (data) => {
-            const tbody = document.querySelector('#bookings-table tbody');
-            tbody.innerHTML = '';
-            data.forEach(b => {
-                const statusClass = b.status === 'Pendiente' ? 'status-pending' : 'status-completed';
-                tbody.innerHTML += `<tr><td>${b.date}</td><td>${b.time}</td><td>${b.client}</td><td>${b.phone}</td><td>${b.service}</td><td><span class="status-badge ${statusClass}">${b.status}</span></td><td>${b.status==='Pendiente'?`<button class="btn btn-primary btn-sm" onclick="window.updateBookingStatus('${b.id}', 'Completado')">✔</button>`:''} <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_bookings', '${b.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
-            });
-        };
-
-        window.renderAdminSales = (data) => {
-            const tbody = document.querySelector('#sales-table tbody');
-            let total = 0; tbody.innerHTML = '';
-            data.forEach(o => {
-                if (o.status === 'Confirmado') total += (o.total || 0);
-                let statusClass = o.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
-                let actions = o.status==='Pendiente'?`<button class="btn btn-success btn-sm" onclick="window.updateOrderStatus('${o.id}', 'Confirmado')"><i class="fas fa-check"></i></button> `:'';
-                actions += `<button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_orders', '${o.id}')"><i class="fas fa-trash"></i></button>`;
-                tbody.innerHTML += `<tr><td>#${o.id.toString().slice(-4)}</td><td>${o.clientName}</td><td>${o.clientPhone || '-'}</td><td>${o.items}</td><td style="max-width: 150px; font-size: 0.8rem;">${o.address || '-'}</td><td>$${(o.total || 0).toLocaleString()}</td><td><span class="status-badge ${statusClass}">${o.status}</span></td><td>${actions}</td></tr>`;
-            });
-            const statSales = document.getElementById('stat-sales');
-            if(statSales) statSales.innerText = '$' + total.toLocaleString();
-        };
-
-        window.renderAdminServices = (rawData) => {
-            const tbody = document.querySelector('#services-table tbody');
-            tbody.innerHTML = '';
-            for (let key in rawData) {
-                if (rawData.hasOwnProperty(key)) {
-                    const s = rawData[key];
-                    tbody.innerHTML += `<tr><td><i class="fas ${s.icon}"></i></td><td><input type="text" value="${s.name}" id="serv-name-${s.id}" class="admin-input"></td><td><input type="number" value="${s.price || 0}" id="serv-price-${s.id}" class="table-input"></td><td><button class="btn btn-success btn-sm" onclick="window.updateService('${s.id}')"><i class="fas fa-save"></i></button> <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_services', '${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
-                }
-            }
-        };
-
-        // --- ACTUALIZADO: RENDER ADMIN PRODUCTS CON OPCIONES ---
         window.renderAdminProducts = (rawData) => {
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
-                    const optionsStr = (p.options && Array.isArray(p.options)) ? p.options.join(', ') : '';
+                    const optionsStr = (p.options && Array.isArray(p.options)) 
+                        ? p.options.map(o => `${o.name}:${o.price}`).join(', ') 
+                        : '';
                     
                     tbody.innerHTML += `
                         <tr>
@@ -712,7 +626,7 @@
                             <td><input type="text" value="${p.name}" id="prod-name-${p.id}" class="admin-input"></td>
                             <td><input type="number" value="${p.price || 0}" id="prod-price-${p.id}" class="table-input"></td>
                             <td><input type="number" value="${p.stock || 0}" id="prod-stock-${p.id}" class="table-input" min="0"></td>
-                            <td><input type="text" value="${optionsStr}" id="prod-options-${p.id}" placeholder="Ej: A, B, C" class="table-input" style="width:150px; font-size: 0.8rem;"></td>
+                            <td><input type="text" value="${optionsStr}" id="prod-options-${p.id}" placeholder="Ej: A:100, B:200" class="table-input" style="width:200px; font-size: 0.8rem;"></td>
                             <td>
                                 <button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}')"><i class="fas fa-save"></i></button> 
                                 <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_products', '${p.id}')"><i class="fas fa-trash"></i></button>
@@ -722,99 +636,33 @@
             }
         };
 
-        // --- FUNCIÓN PAGOS MEJORADA (LIMPIA VISUAL) ---
-        window.renderAdminPayments = (rawData) => {
-            const tbody = document.querySelector('#payments-table tbody');
-            tbody.innerHTML = '';
-            if (!rawData) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#888;">No hay enlaces configurados</td></tr>';
-                return;
-            }
-            for (const key in rawData) {
-                if (rawData.hasOwnProperty(key)) {
-                    const p = rawData[key];
-                    if(!p.name || !p.url) continue; 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><input type="text" value="${p.name}" id="pay-name-${p.id}" class="admin-input"></td>
-                            <td><input type="text" value="${p.url}" id="pay-url-${p.id}" class="admin-input" style="font-family: monospace;"></td>
-                            <td>
-                                <button class="btn btn-success btn-sm" onclick="window.updatePayment('${p.id}')"><i class="fas fa-save"></i></button> 
-                                <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_payment_links', '${p.id}')"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`;
-                }
-            }
-        };
-
-        window.cleanUndefinedPayments = async () => {
-            if(!confirm("¿Eliminar registros vacíos o corruptos?")) return;
-            const snap = await get(ref(db, 'carkkis_payment_links'));
-            const data = snap.val();
-            if (!data) return showToast("No hay datos para limpiar", "info");
-            let count = 0;
-            const updates = {};
-            for (const key in data) {
-                if (data.hasOwnProperty(key)) {
-                    const p = data[key];
-                    if (!p.name || !p.url || p.name === "undefined" || p.url === "undefined") {
-                        updates[`carkkis_payment_links/${key}`] = null;
-                        count++;
-                    }
-                }
-            }
-            if (count > 0) {
-                await update(ref(db), updates);
-                showToast(`Se eliminaron ${count} registros basura`, "success");
-            } else {
-                showToast("No se encontraron registros vacíos", "info");
-            }
-        };
-
-        window.updatePayment = async (id) => {
-            const snap = await get(ref(db, 'carkkis_payment_links'));
-            const data = snap.val();
-            let firebaseKey = null;
-            for (const k in data) {
-                if (data[k].id == id) { firebaseKey = k; break; }
-            }
-            if (!firebaseKey) return showToast('Error: No se encontró el pago', 'error');
-            const newName = document.getElementById(`pay-name-${id}`).value;
-            const newUrl = document.getElementById(`pay-url-${id}`).value;
-            if(!newName || !newUrl) return showToast('Nombre y URL son requeridos', 'error');
-            const updates = {};
-            updates[`carkkis_payment_links/${firebaseKey}/name`] = newName;
-            updates[`carkkis_payment_links/${firebaseKey}/url`] = newUrl;
-            await update(ref(db), updates);
-            showToast('Enlace actualizado', 'success');
-        };
-
-        // --- ACTUALIZADO: AGREGAR Y ACTUALIZAR PRODUCTOS CON OPCIONES ---
         window.addNewProduct = () => {
             const name = document.getElementById('new-prod-name').value;
             const price = document.getElementById('new-prod-price').value;
             const stock = document.getElementById('new-prod-stock').value;
             const icon = document.getElementById('new-prod-icon').value || 'fa-box';
-            const optionsStr = document.getElementById('new-prod-options').value;
             
             if(!name || !price) return showToast('Campos requeridos', 'error');
             
-            // Convertir string de opciones a array
+            const variantRows = document.querySelectorAll('#variants-list .variant-row');
             let optionsArr = [];
-            if(optionsStr.trim()) {
-                optionsArr = optionsStr.split(',').map(s => s.trim()).filter(s => s !== '');
-            }
+            variantRows.forEach(row => {
+                const vName = row.querySelector('.var-name').value.trim();
+                const vPrice = row.querySelector('.var-price').value;
+                if(vName && vPrice) {
+                    optionsArr.push({ name: vName, price: parseInt(vPrice) });
+                }
+            });
             
             const newRef = push(ref(db, 'carkkis_products'));
             set(newRef, { id: Date.now(), name, price: parseInt(price), stock: parseInt(stock || 10), icon, options: optionsArr });
             
             showToast('Producto agregado', 'success');
-            // Limpiar campos
             document.getElementById('new-prod-name').value = ''; 
             document.getElementById('new-prod-price').value = ''; 
             document.getElementById('new-prod-stock').value = ''; 
             document.getElementById('new-prod-icon').value = '';
-            document.getElementById('new-prod-options').value = '';
+            document.getElementById('variants-list').innerHTML = '';
         };
 
         window.updateProduct = async (id) => {
@@ -827,11 +675,16 @@
                 updates[`carkkis_products/${key}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
                 updates[`carkkis_products/${key}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
                 
-                // Procesar opciones
                 const optionsStr = document.getElementById(`prod-options-${id}`).value;
                 let optionsArr = [];
                 if(optionsStr.trim()) {
-                    optionsArr = optionsStr.split(',').map(s => s.trim()).filter(s => s !== '');
+                    const parts = optionsStr.split(',');
+                    parts.forEach(part => {
+                        const subParts = part.split(':');
+                        if(subParts.length === 2) {
+                            optionsArr.push({ name: subParts[0].trim(), price: parseInt(subParts[1].trim()) });
+                        }
+                    });
                 }
                 updates[`carkkis_products/${key}/options`] = optionsArr;
 
@@ -840,8 +693,53 @@
             }
         };
 
+        window.renderAdminPayments = (rawData) => {
+            const tbody = document.querySelector('#payments-table tbody');
+            tbody.innerHTML = '';
+            if (!rawData) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No hay enlaces</td></tr>'; return; }
+            for (const key in rawData) {
+                if (rawData.hasOwnProperty(key)) {
+                    const p = rawData[key];
+                    if(!p.name || !p.url) continue; 
+                    tbody.innerHTML += `<tr><td><input type="text" value="${p.name}" id="pay-name-${p.id}" class="admin-input"></td><td><input type="text" value="${p.url}" id="pay-url-${p.id}" class="admin-input" style="font-family: monospace;"></td><td><button class="btn btn-success btn-sm" onclick="window.updatePayment('${p.id}')"><i class="fas fa-save"></i></button> <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_payment_links', '${p.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                }
+            }
+        };
+
+        window.updatePayment = async (id) => {
+            const snap = await get(ref(db, 'carkkis_payment_links'));
+            const data = snap.val();
+            let firebaseKey = null;
+            for (const k in data) { if (data[k].id == id) { firebaseKey = k; break; } }
+            if (!firebaseKey) return showToast('Error', 'error');
+            const newName = document.getElementById(`pay-name-${id}`).value;
+            const newUrl = document.getElementById(`pay-url-${id}`).value;
+            if(!newName || !newUrl) return showToast('Nombre y URL requeridos', 'error');
+            const updates = {};
+            updates[`carkkis_payment_links/${firebaseKey}/name`] = newName;
+            updates[`carkkis_payment_links/${firebaseKey}/url`] = newUrl;
+            await update(ref(db), updates);
+            showToast('Enlace actualizado', 'success');
+        };
+
+        window.cleanUndefinedPayments = async () => {
+            if(!confirm("¿Eliminar registros vacíos?")) return;
+            const snap = await get(ref(db, 'carkkis_payment_links'));
+            const data = snap.val();
+            if (!data) return;
+            let count = 0; const updates = {};
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    const p = data[key];
+                    if (!p.name || !p.url || p.name === "undefined" || p.url === "undefined") {
+                        updates[`carkkis_payment_links/${key}`] = null; count++;
+                    }
+                }
+            }
+            if (count > 0) { await update(ref(db), updates); showToast(`Eliminados ${count}`, "success"); }
+        };
+
         window.addToCart = async (id) => {
-            // Solo se usa para productos SIN opciones ahora
             const snap = await get(ref(db, 'carkkis_products'));
             const rawData = snap.val();
             const products = rawData ? Object.values(rawData) : [];
@@ -850,33 +748,19 @@
                 cart.push(p);
                 document.getElementById('cart-count').innerText = cart.length;
                 showToast(`Agregado: ${p.name}`, 'success');
-            } else {
-                showToast('Producto agotado', 'error');
-            }
+            } else { showToast('Agotado', 'error'); }
         };
 
         window.openCartModal = async () => {
             if (cart.length === 0) return showToast('Carrito vacío', 'info');
-            
             const nameInput = document.getElementById('order-name');
             const phoneInput = document.getElementById('order-phone');
-            
-            if (currentUser) {
-                nameInput.value = currentUser.name;
-                phoneInput.value = currentUser.phone;
-                nameInput.disabled = true;
-                phoneInput.disabled = true;
-            } else {
-                nameInput.value = '';
-                phoneInput.value = '';
-                nameInput.disabled = false;
-                phoneInput.disabled = false;
-            }
+            if (currentUser) { nameInput.value = currentUser.name; phoneInput.value = currentUser.phone; nameInput.disabled = true; phoneInput.disabled = true; } 
+            else { nameInput.value = ''; phoneInput.value = ''; nameInput.disabled = false; phoneInput.disabled = false; }
 
             const list = document.getElementById('cart-items-list'); list.innerHTML = ''; let total = 0;
             cart.forEach(i => { 
                 total += (i.price || 0); 
-                // Mostrar opción si existe
                 const itemText = i.selectedOption ? `${i.name} <small>(${i.selectedOption})</small>` : i.name;
                 list.innerHTML += `<li><span>${itemText}</span><span>$${(i.price || 0).toLocaleString()}</span></li>`; 
             });
@@ -884,16 +768,10 @@
             
             const select = document.getElementById('order-payment');
             select.innerHTML = '<option value="">Seleccione...</option>';
-            
             if(window.paymentLinks && window.paymentLinks.length > 0) {
-                window.paymentLinks.forEach(p => {
-                    select.innerHTML += `<option value="${p.name}">${p.name}</option>`;
-                });
+                window.paymentLinks.forEach(p => { select.innerHTML += `<option value="${p.name}">${p.name}</option>`; });
             }
-            
-            document.getElementById('order-city').value = '';
-            document.getElementById('order-address-detail').value = '';
-            document.getElementById('order-payment').value = '';
+            document.getElementById('order-city').value = ''; document.getElementById('order-address-detail').value = ''; document.getElementById('order-payment').value = '';
             window.openModal('cartModal');
         };
 
@@ -904,9 +782,7 @@
             const addressDetail = document.getElementById('order-address-detail').value;
             const payment = document.getElementById('order-payment').value;
 
-            if(!clientName || !clientPhone) return showToast('Por favor ingresa tu nombre y teléfono', 'error');
-            if(!city || !addressDetail) return showToast('Selecciona ciudad e ingresa tu dirección', 'error');
-            if (!payment) return showToast('Selecciona pago', 'error');
+            if(!clientName || !clientPhone || !city || !addressDetail || !payment) return showToast('Todos los campos son obligatorios', 'error');
 
             const productsSnap = await get(ref(db, 'carkkis_products'));
             const products = productsSnap.val();
@@ -923,36 +799,18 @@
             const total = cart.reduce((s,i) => s + (i.price || 0), 0);
             const newOrderRef = push(ref(db, 'carkkis_orders'));
             const orderId = newOrderRef.key;
-            
             const finalName = currentUser ? currentUser.name : clientName;
             const finalPhone = currentUser ? currentUser.phone : clientPhone;
-
             const fullAddress = `${city} - ${addressDetail}`;
-
             const linkObj = window.paymentLinks.find(l => l.name === payment);
             const paymentUrl = linkObj ? linkObj.url : '#';
-
-            // Construir string de items con opciones
             const itemsString = cart.map(i => i.selectedOption ? `${i.name} (${i.selectedOption})` : i.name).join(', ');
 
-            const newOrder = { 
-                id: orderId, 
-                clientName: finalName, 
-                clientPhone: finalPhone,
-                items: itemsString, 
-                total: total, 
-                status: 'Pendiente', 
-                dateStr: new Date().toLocaleDateString(), 
-                timestamp: Date.now(), 
-                address: fullAddress, 
-                paymentMethod: payment 
-            };
+            const newOrder = { id: orderId, clientName: finalName, clientPhone: finalPhone, items: itemsString, total: total, status: 'Pendiente', dateStr: new Date().toLocaleDateString(), timestamp: Date.now(), address: fullAddress, paymentMethod: payment };
             updates['carkkis_orders/' + orderId] = newOrder;
 
             await update(ref(db), updates);
-
             if(paymentUrl !== '#') window.open(paymentUrl, '_blank');
-
             cart = []; document.getElementById('cart-count').innerText = '0'; window.closeModals();
             showToast('Pedido registrado', 'success');
         };
@@ -967,218 +825,118 @@
             const dateVal = document.getElementById('book-date').value;
             const timeVal = document.getElementById('book-time').value;
             
-            if(!clientName || !clientPhone) return showToast('Datos de contacto requeridos', 'error');
-
+            if(!clientName || !clientPhone) return showToast('Datos requeridos', 'error');
             const d = new Date(`${dateVal}T${timeVal}`);
             const dayOfWeek = d.getDay(); 
-            if (dayOfWeek === 0) return showToast('No se agendan citas los domingos', 'error');
-
+            if (dayOfWeek === 0) return showToast('No hay citas domingos', 'error');
             if (dayOfWeek === 6) {
-                const [hourStr] = timeVal.split(':');
-                const hour = parseInt(hourStr);
-                if (hour >= 12) return showToast('Los sábados solo se agenda hasta las 12:00 PM', 'error');
-                if (issueType === 'ruidos' || issueType === 'electrico' || issueType === 'largo') {
-                    return showToast('Por política, este tipo de reparaciones no se agendan los sábados', 'error');
-                }
+                const [hourStr] = timeVal.split(':'); const hour = parseInt(hourStr);
+                if (hour >= 12) return showToast('Sábados hasta 12:00 PM', 'error');
+                if (['ruidos','electrico','largo'].includes(issueType)) return showToast('Estas reparaciones no se agendan sábados', 'error');
             }
-
             const newRef = push(ref(db, 'carkkis_bookings'));
             const finalName = currentUser ? currentUser.name : clientName;
             const finalPhone = currentUser ? currentUser.phone : clientPhone;
-
-            await set(newRef, {
-                id: newRef.key,
-                date: d.toLocaleDateString(),
-                time: timeVal,
-                client: finalName,
-                phone: finalPhone,
-                plate: plate,
-                service: service,
-                issueType: issueType,
-                status: 'Pendiente'
-            });
+            await set(newRef, { id: newRef.key, date: d.toLocaleDateString(), time: timeVal, client: finalName, phone: finalPhone, plate: plate, service: service, issueType: issueType, status: 'Pendiente' });
             window.closeModals(); showToast('Cita agendada', 'success'); e.target.reset();
         };
 
         window.openBookingModal = async () => {
-            const nameInput = document.getElementById('book-name');
-            const phoneInput = document.getElementById('book-phone');
-
-            if (currentUser) {
-                nameInput.value = currentUser.name;
-                phoneInput.value = currentUser.phone;
-                nameInput.disabled = true;
-                phoneInput.disabled = true;
-            } else {
-                nameInput.value = '';
-                phoneInput.value = '';
-                nameInput.disabled = false;
-                phoneInput.disabled = false;
-            }
-
+            const nameInput = document.getElementById('book-name'); const phoneInput = document.getElementById('book-phone');
+            if (currentUser) { nameInput.value = currentUser.name; phoneInput.value = currentUser.phone; nameInput.disabled = true; phoneInput.disabled = true; } 
+            else { nameInput.value = ''; phoneInput.value = ''; nameInput.disabled = false; phoneInput.disabled = false; }
             const serviceSelect = document.getElementById('book-service');
             if(serviceSelect.innerHTML.trim() === '') {
-                const snap = await get(ref(db, 'carkkis_services'));
-                const rawData = snap.val();
-                const s = rawData ? Object.values(rawData) : []; 
+                const snap = await get(ref(db, 'carkkis_services')); const rawData = snap.val(); const s = rawData ? Object.values(rawData) : []; 
                 s.forEach(x => { serviceSelect.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
             }
-
-            const timeSelect = document.getElementById('book-time');
-            timeSelect.innerHTML = '<option value="">Seleccione...</option>';
+            const timeSelect = document.getElementById('book-time'); timeSelect.innerHTML = '<option value="">Seleccione...</option>';
             let currentHour = 9; let currentMinute = 15; const endHour = 18;
             while (currentHour < endHour) {
                 const hourStr = currentHour < 10 ? `0${currentHour}` : currentHour;
                 const minStr = currentMinute < 10 ? `0${currentMinute}` : currentMinute;
-                const timeStr = `${hourStr}:${minStr}`;
-                timeSelect.innerHTML += `<option value="${timeStr}">${timeStr}</option>`;
-                currentMinute += 30;
-                if (currentMinute >= 60) { currentMinute -= 60; currentHour++; }
+                const timeStr = `${hourStr}:${minStr}`; timeSelect.innerHTML += `<option value="${timeStr}">${timeStr}</option>`;
+                currentMinute += 30; if (currentMinute >= 60) { currentMinute -= 60; currentHour++; }
             }
             window.openModal('bookingModal');
         };
 
-        window.selectService = (name) => {
-            window.openBookingModal();
-            setTimeout(() => document.getElementById('book-service').value = name, 100);
-        };
-
-        window.handleAuthClick = () => {
-            if(currentUser) { window.logout(); } else { window.openModal('loginModal'); }
-        };
-
+        window.selectService = (name) => { window.openBookingModal(); setTimeout(() => document.getElementById('book-service').value = name, 100); };
+        window.handleAuthClick = () => { if(currentUser) { window.logout(); } else { window.openModal('loginModal'); } };
         window.handleLogin = async () => {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
-            const snap = await get(ref(db, 'carkkis_users'));
-            const rawData = snap.val();
-            const users = rawData ? Object.values(rawData) : [];
+            const email = document.getElementById('login-email').value; const pass = document.getElementById('login-pass').value;
+            const snap = await get(ref(db, 'carkkis_users')); const rawData = snap.val(); const users = rawData ? Object.values(rawData) : [];
             const user = users.find(u => u.email === email && u.pass === pass);
             if (user) { currentUser = user; loginSuccess(); } else { showToast('Credenciales inválidas', 'error'); }
         };
-
         window.handleRegister = async () => {
-            const name = document.getElementById('reg-name').value;
-            const phone = document.getElementById('reg-phone').value;
-            const email = document.getElementById('reg-email').value;
-            const pass = document.getElementById('reg-pass').value;
+            const name = document.getElementById('reg-name').value; const phone = document.getElementById('reg-phone').value;
+            const email = document.getElementById('reg-email').value; const pass = document.getElementById('reg-pass').value;
             if(!name || !phone || !email || !pass) return showToast('Datos incompletos', 'error');
-            const snap = await get(ref(db, 'carkkis_users'));
-            const rawData = snap.val();
-            const users = rawData ? Object.values(rawData) : [];
+            const snap = await get(ref(db, 'carkkis_users')); const rawData = snap.val(); const users = rawData ? Object.values(rawData) : [];
             if(users.find(u => u.email === email)) return showToast('Correo existe', 'error');
-
-            const newRef = push(ref(db, 'carkkis_users'));
-            await set(newRef, { name, phone, email, pass, role: 'client' });
-            currentUser = { name, phone, email, pass, role: 'client' };
-            loginSuccess();
+            const newRef = push(ref(db, 'carkkis_users')); await set(newRef, { name, phone, email, pass, role: 'client' });
+            currentUser = { name, phone, email, pass, role: 'client' }; loginSuccess();
         };
 
         function loginSuccess() {
             window.closeModals(); showToast(`Bienvenido, ${currentUser.name}`, 'success');
-            const btn = document.getElementById('auth-btn');
-            btn.innerText = "Cerrar Sesión"; btn.classList.remove('btn-primary'); btn.classList.add('btn-danger');
-            const regBtn = document.getElementById('reg-btn-nav');
-            if(regBtn) regBtn.style.display = 'none';
+            const btn = document.getElementById('auth-btn'); btn.innerText = "Cerrar Sesión"; btn.classList.remove('btn-primary'); btn.classList.add('btn-danger');
+            const regBtn = document.getElementById('reg-btn-nav'); if(regBtn) regBtn.style.display = 'none';
             if(currentUser.role === 'admin') {
                 document.getElementById('public-view').classList.add('hidden');
                 document.getElementById('admin-panel').style.display = 'block';
                 loadAnalytics();
             }
         }
-
         window.logout = () => {
-            currentUser = null; document.getElementById('admin-panel').style.display = 'none';
-            document.getElementById('public-view').classList.remove('hidden');
-            const btn = document.getElementById('auth-btn');
-            btn.innerText = 'Iniciar Sesión'; btn.classList.remove('btn-danger'); btn.classList.add('btn-primary');
-            const regBtn = document.getElementById('reg-btn-nav');
-            if(regBtn) regBtn.style.display = 'inline-block';
-            showToast('Sesión cerrada', 'info');
+            window.showPublicView(); 
         };
-
         window.switchAdminTab = (tab) => {
             currentTab = tab;
             document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
-            const tabEl = document.getElementById(`tab-${tab}`);
-            if(tabEl) tabEl.classList.add('active');
+            const tabEl = document.getElementById(`tab-${tab}`); if(tabEl) tabEl.classList.add('active');
             ['analytics','profits','bookings','sales','payments','services','products'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
-            document.getElementById(`view-${tab}`).classList.remove('hidden');
-            if(tab === 'analytics') loadAnalytics();
+            document.getElementById(`view-${tab}`).classList.remove('hidden'); if(tab === 'analytics') loadAnalytics();
         };
-
         window.deleteItem = async (path, itemId) => {
             if(!confirm('¿Eliminar?')) return;
-            const snap = await get(ref(db, path));
-            const data = snap.val();
-            const key = Object.keys(data).find(k => data[k].id == itemId);
-            if(key) await remove(ref(db, `${path}/${key}`));
+            const snap = await get(ref(db, path)); const data = snap.val();
+            const key = Object.keys(data).find(k => data[k].id == itemId); if(key) await remove(ref(db, `${path}/${key}`));
             showToast('Eliminado', 'info');
         };
-
         window.addNewService = () => {
-             const name = document.getElementById('new-serv-name').value;
-             const price = document.getElementById('new-serv-price').value;
-             const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
+             const name = document.getElementById('new-serv-name').value; const price = document.getElementById('new-serv-price').value; const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
              if(!name || !price) return showToast('Campos requeridos', 'error');
-             const newRef = push(ref(db, 'carkkis_services'));
-             set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
-             showToast('Servicio agregado', 'success');
-             document.getElementById('new-serv-name').value=''; document.getElementById('new-serv-price').value=''; document.getElementById('new-serv-icon').value='';
+             const newRef = push(ref(db, 'carkkis_services')); set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
+             showToast('Servicio agregado', 'success'); document.getElementById('new-serv-name').value=''; document.getElementById('new-serv-price').value=''; document.getElementById('new-serv-icon').value='';
         };
-
         window.updateService = async (id) => {
-            const snap = await get(ref(db, 'carkkis_services'));
-            const data = snap.val();
+            const snap = await get(ref(db, 'carkkis_services')); const data = snap.val();
             const key = Object.keys(data).find(k => data[k].id == id);
-            if (key) {
-                 const updates = {};
-                 updates[`carkkis_services/${key}/name`] = document.getElementById(`serv-name-${id}`).value;
-                 updates[`carkkis_services/${key}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value);
-                 await update(ref(db), updates);
-                 showToast('Servicio actualizado', 'success');
-            }
+            if (key) { const updates = {}; updates[`carkkis_services/${key}/name`] = document.getElementById(`serv-name-${id}`).value; updates[`carkkis_services/${key}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value); await update(ref(db), updates); showToast('Servicio actualizado', 'success'); }
         };
-
         window.addNewPayment = () => {
-            const name = document.getElementById('new-pay-name').value;
-            const url = document.getElementById('new-pay-link').value;
-            if(!name || !url) return showToast('Nombre y URL son requeridos', 'error');
-            const newRef = push(ref(db, 'carkkis_payment_links'));
-            set(newRef, { id: Date.now(), name: name, url: url });
-            showToast('Enlace de pago agregado', 'success');
-            document.getElementById('new-pay-name').value = '';
-            document.getElementById('new-pay-link').value = '';
+            const name = document.getElementById('new-pay-name').value; const url = document.getElementById('new-pay-link').value;
+            if(!name || !url) return showToast('Nombre y URL requeridos', 'error');
+            const newRef = push(ref(db, 'carkkis_payment_links')); set(newRef, { id: Date.now(), name: name, url: url });
+            showToast('Enlace agregado', 'success'); document.getElementById('new-pay-name').value = ''; document.getElementById('new-pay-link').value = '';
         };
-
-        window.updateBookingStatus = async (key, status) => {
-            await update(ref(db, `carkkis_bookings/${key}`), { status });
-            showToast('Estado actualizado', 'success');
-        };
-
-        window.updateOrderStatus = async (key, status) => {
-            await update(ref(db, `carkkis_orders/${key}`), { status });
-            showToast('Estado actualizado', 'success');
-        };
-
+        window.updateBookingStatus = async (key, status) => { await update(ref(db, `carkkis_bookings/${key}`), { status }); showToast('Estado actualizado', 'success'); };
+        window.updateOrderStatus = async (key, status) => { await update(ref(db, `carkkis_orders/${key}`), { status }); showToast('Estado actualizado', 'success'); };
         window.openModal = (id) => { document.getElementById(id).style.display = 'flex'; };
         window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-
-        function loadAnalytics() { document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Calculando analítica...</td></tr>'; }
-
+        function loadAnalytics() { document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Calculando...</td></tr>'; }
         function loadProfits(orders) {
-            const now = new Date();
-            let total = 0, count = 0;
+            const now = new Date(); let total = 0, count = 0;
             orders.forEach(o => {
                 const d = new Date(o.timestamp);
                 if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
                     if(o.status === 'Confirmado') { total += (o.total || 0); count++; }
                 }
             });
-            document.getElementById('monthly-profit').innerText = '$' + total.toLocaleString();
-            document.getElementById('monthly-orders').innerText = count;
-            const tbody = document.querySelector('#profits-table tbody');
-            tbody.innerHTML = '';
+            document.getElementById('monthly-profit').innerText = '$' + total.toLocaleString(); document.getElementById('monthly-orders').innerText = count;
+            const tbody = document.querySelector('#profits-table tbody'); tbody.innerHTML = '';
             orders.forEach(o => {
                 const d = new Date(o.timestamp);
                 if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
@@ -1187,7 +945,6 @@
                 }
             });
         }
-
         function showToast(msg, type) {
             const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = 'toast';
             const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
@@ -1195,12 +952,7 @@
             t.style.borderLeftColor = color; t.innerHTML = `<i class="fas ${icon}" style="color:${color}"></i> <span>${msg}</span>`;
             c.appendChild(t); setTimeout(() => t.remove(), 3000);
         }
-
-        window.onload = () => {
-            console.log("Cargando aplicación...");
-            seedData();
-            setupListeners();
-        };
+        window.onload = () => { seedData(); setupListeners(); };
         window.onclick = (e) => { if(e.target.classList.contains('modal')) window.closeModals(); };
     </script>
 </body>
