@@ -26,10 +26,8 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--blanco); color: var(--negro); line-height: 1.6; overflow-x: hidden; }
-        /* CORRECCIÓN: Quitamos la regla global 'a' y creamos una clase específica para navegación */
         .nav-link { text-decoration: none; color: inherit; transition: 0.3s; cursor: pointer; font-weight: 500; color: #cbd5e1; }
         .nav-link:hover { color: white; }
-        
         ul { list-style: none; }
         img { max-width: 100%; display: block; }
 
@@ -160,7 +158,6 @@
                 </div>
                 <nav>
                     <ul>
-                        <!-- CAMBIO CRÍTICO: Usamos <span> con clase .nav-link en lugar de <a> -->
                         <li><span class="nav-link" onclick="window.showSection('home')">Inicio</span></li>
                         <li><span class="nav-link" onclick="window.showSection('store')">Tienda</span></li>
                         <li><span class="nav-link" onclick="window.showSection('services')">Servicios</span></li>
@@ -265,22 +262,34 @@
                     <div class="table-container"><table id="payments-table"><thead><tr><th>Nombre</th><th>Enlace</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
                 </div>
 
+                <!-- VISTA DE SERVICIOS ADMINISTRADOR (REVISADA) -->
                 <div id="view-services" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Servicios</h2>
                     <div class="crud-grid">
-                        <input type="text" id="new-serv-name" placeholder="Nombre" class="admin-input">
+                        <input type="text" id="new-serv-name" placeholder="Nombre del Servicio" class="admin-input">
                         <input type="number" id="new-serv-price" placeholder="Precio ($)" class="admin-input">
-                        <input type="text" id="new-serv-icon" placeholder="Icono (fa-wrench)" class="admin-input">
-                        <button class="btn btn-primary" onclick="window.addNewService()">Agregar</button>
+                        <input type="text" id="new-serv-icon" placeholder="Icono (ej. fa-wrench)" class="admin-input">
+                        <button class="btn btn-primary" onclick="window.addNewService()">Agregar Servicio</button>
                     </div>
-                    <div class="table-container"><table id="services-table"><thead><tr><th>Icono</th><th>Nombre</th><th>Precio</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-container">
+                        <table id="services-table">
+                            <thead>
+                                <tr>
+                                    <th>Icono</th>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
-                
-                <!-- GESTIÓN DE PRODUCTOS CON PRECIO POR VARIANTE -->
+
+                <!-- GESTIÓN DE PRODUCTOS -->
                 <div id="view-products" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Inventario</h2>
                     
-                    <!-- Formulario Principal -->
                     <div class="crud-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr auto;">
                         <input type="text" id="new-prod-name" placeholder="Nombre" class="admin-input">
                         <input type="number" id="new-prod-price" placeholder="Precio Base ($)" class="admin-input">
@@ -289,7 +298,6 @@
                         <button class="btn btn-primary" onclick="window.addNewProduct()">Agregar</button>
                     </div>
 
-                    <!-- Constructor Dinámico de Variantes -->
                     <div style="margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
                         <label style="font-weight:600; font-size:0.9rem; color:var(--azul-oscuro);">Variantes y Precios Específicos</label>
                         <small style="display:block; color:#64748b; margin-bottom:10px;">Si añades variantes, estos precios sobrescribirán el precio base.</small>
@@ -305,7 +313,7 @@
                                     <th>Nombre</th>
                                     <th>Precio Base</th>
                                     <th>Stock</th>
-                                    <th>Variantes (Nombre:Precio)</th>
+                                    <th>Variantes</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
@@ -428,9 +436,8 @@
         let currentTab = 'analytics';
         let pendingProduct = null;
 
-        // --- FUNCIÓN NAVEGACIÓN ---
         window.showSection = (id) => {
-            console.log("Navegando a:", id); // Debug en consola
+            console.log("Navegando a:", id);
             const home = document.getElementById('home');
             const store = document.getElementById('store');
             const services = document.getElementById('services');
@@ -613,6 +620,8 @@
         window.renderAdminProducts = (rawData) => {
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
+            if(!rawData) return;
+            
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
@@ -693,6 +702,75 @@
             }
         };
 
+        // --- FUNCIONES DE SERVICIOS (VERIFICADAS) ---
+        window.renderAdminServices = (rawData) => {
+            const tbody = document.querySelector('#services-table tbody');
+            if(!tbody) return; // Seguridad extra
+            tbody.innerHTML = '';
+            
+            if (!rawData) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">No hay servicios registrados</td></tr>';
+                return;
+            }
+
+            for (let key in rawData) {
+                if (rawData.hasOwnProperty(key)) {
+                    const s = rawData[key];
+                    // Asegurarse de que s.id existe, si no usar key
+                    const safeId = s.id || key; 
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><i class="fas ${s.icon || 'fa-tools'}"></i></td>
+                            <td><input type="text" value="${s.name}" id="serv-name-${safeId}" class="admin-input"></td>
+                            <td><input type="number" value="${s.price || 0}" id="serv-price-${safeId}" class="table-input"></td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="window.updateService('${safeId}', '${key}')"><i class="fas fa-save"></i></button> 
+                                <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_services', '${key}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                }
+            }
+        };
+
+        window.addNewService = () => {
+            const name = document.getElementById('new-serv-name').value;
+            const price = document.getElementById('new-serv-price').value;
+            const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
+            
+            if(!name || !price) return showToast('El nombre y el precio son obligatorios', 'error');
+            
+            const newRef = push(ref(db, 'carkkis_services'));
+            set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
+            
+            showToast('Servicio agregado', 'success');
+            document.getElementById('new-serv-name').value=''; 
+            document.getElementById('new-serv-price').value=''; 
+            document.getElementById('new-serv-icon').value='';
+        };
+
+        window.updateService = async (id, firebaseKey) => {
+            if(!firebaseKey) return showToast('Error clave de servicio', 'error');
+            
+            const updates = {};
+            updates[`carkkis_services/${firebaseKey}/name`] = document.getElementById(`serv-name-${id}`).value;
+            updates[`carkkis_services/${firebaseKey}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value);
+            
+            await update(ref(db), updates);
+            showToast('Servicio actualizado', 'success');
+        };
+
+        window.renderPublicServices = (services) => {
+            const container = document.getElementById('public-services-grid');
+            if(!container) return;
+            container.innerHTML = '';
+            if(!Array.isArray(services)) return;
+            services.forEach(s => {
+                container.innerHTML += `<div class="product-card" onclick="window.selectService('${s.name}')"><div class="product-img"><i class="fas ${s.icon || 'fa-wrench'} fa-2x"></i></div><h3>${s.name}</h3><span class="product-price">$${(s.price || 0).toLocaleString()}</span></div>`;
+            });
+        };
+        // --- FIN SERVICIOS ---
+
         window.renderAdminPayments = (rawData) => {
             const tbody = document.querySelector('#payments-table tbody');
             tbody.innerHTML = '';
@@ -701,23 +779,19 @@
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
                     if(!p.name || !p.url) continue; 
-                    tbody.innerHTML += `<tr><td><input type="text" value="${p.name}" id="pay-name-${p.id}" class="admin-input"></td><td><input type="text" value="${p.url}" id="pay-url-${p.id}" class="admin-input" style="font-family: monospace;"></td><td><button class="btn btn-success btn-sm" onclick="window.updatePayment('${p.id}')"><i class="fas fa-save"></i></button> <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_payment_links', '${p.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                    tbody.innerHTML += `<tr><td><input type="text" value="${p.name}" id="pay-name-${p.id}" class="admin-input"></td><td><input type="text" value="${p.url}" id="pay-url-${p.id}" class="admin-input" style="font-family: monospace;"></td><td><button class="btn btn-success btn-sm" onclick="window.updatePayment('${p.id}', '${key}')"><i class="fas fa-save"></i></button> <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_payment_links', '${key}')"><i class="fas fa-trash"></i></button></td></tr>`;
                 }
             }
         };
 
-        window.updatePayment = async (id) => {
-            const snap = await get(ref(db, 'carkkis_payment_links'));
-            const data = snap.val();
-            let firebaseKey = null;
-            for (const k in data) { if (data[k].id == id) { firebaseKey = k; break; } }
-            if (!firebaseKey) return showToast('Error', 'error');
+        window.updatePayment = async (id, key) => {
+            if(!key) return;
             const newName = document.getElementById(`pay-name-${id}`).value;
             const newUrl = document.getElementById(`pay-url-${id}`).value;
             if(!newName || !newUrl) return showToast('Nombre y URL requeridos', 'error');
             const updates = {};
-            updates[`carkkis_payment_links/${firebaseKey}/name`] = newName;
-            updates[`carkkis_payment_links/${firebaseKey}/url`] = newUrl;
+            updates[`carkkis_payment_links/${key}/name`] = newName;
+            updates[`carkkis_payment_links/${key}/url`] = newUrl;
             await update(ref(db), updates);
             showToast('Enlace actualizado', 'success');
         };
@@ -896,25 +970,19 @@
             currentTab = tab;
             document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
             const tabEl = document.getElementById(`tab-${tab}`); if(tabEl) tabEl.classList.add('active');
-            ['analytics','profits','bookings','sales','payments','services','products'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
-            document.getElementById(`view-${tab}`).classList.remove('hidden'); if(tab === 'analytics') loadAnalytics();
+            ['analytics','profits','bookings','sales','payments','services','products'].forEach(t => {
+                const el = document.getElementById(`view-${t}`);
+                if(el) el.classList.add('hidden');
+            });
+            const viewEl = document.getElementById(`view-${tab}`);
+            if(viewEl) viewEl.classList.remove('hidden');
+            
+            if(tab === 'analytics') loadAnalytics();
         };
-        window.deleteItem = async (path, itemId) => {
+        window.deleteItem = async (path, key) => {
             if(!confirm('¿Eliminar?')) return;
-            const snap = await get(ref(db, path)); const data = snap.val();
-            const key = Object.keys(data).find(k => data[k].id == itemId); if(key) await remove(ref(db, `${path}/${key}`));
+            await remove(ref(db, `${path}/${key}`));
             showToast('Eliminado', 'info');
-        };
-        window.addNewService = () => {
-             const name = document.getElementById('new-serv-name').value; const price = document.getElementById('new-serv-price').value; const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
-             if(!name || !price) return showToast('Campos requeridos', 'error');
-             const newRef = push(ref(db, 'carkkis_services')); set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
-             showToast('Servicio agregado', 'success'); document.getElementById('new-serv-name').value=''; document.getElementById('new-serv-price').value=''; document.getElementById('new-serv-icon').value='';
-        };
-        window.updateService = async (id) => {
-            const snap = await get(ref(db, 'carkkis_services')); const data = snap.val();
-            const key = Object.keys(data).find(k => data[k].id == id);
-            if (key) { const updates = {}; updates[`carkkis_services/${key}/name`] = document.getElementById(`serv-name-${id}`).value; updates[`carkkis_services/${key}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value); await update(ref(db), updates); showToast('Servicio actualizado', 'success'); }
         };
         window.addNewPayment = () => {
             const name = document.getElementById('new-pay-name').value; const url = document.getElementById('new-pay-link').value;
