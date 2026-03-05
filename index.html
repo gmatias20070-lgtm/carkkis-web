@@ -1111,4 +1111,97 @@
             if(!confirm('¿Eliminar?')) return;
             const snap = await get(ref(db, path));
             const data = snap.val();
-            const key = 
+            const key = Object.keys(data).find(k => data[k].id == itemId);
+            if(key) await remove(ref(db, `${path}/${key}`));
+            showToast('Eliminado', 'info');
+        };
+
+        window.addNewService = () => {
+             const name = document.getElementById('new-serv-name').value;
+             const price = document.getElementById('new-serv-price').value;
+             const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
+             if(!name || !price) return showToast('Campos requeridos', 'error');
+             const newRef = push(ref(db, 'carkkis_services'));
+             set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
+             showToast('Servicio agregado', 'success');
+             document.getElementById('new-serv-name').value=''; document.getElementById('new-serv-price').value=''; document.getElementById('new-serv-icon').value='';
+        };
+
+        window.updateService = async (id) => {
+            const snap = await get(ref(db, 'carkkis_services'));
+            const data = snap.val();
+            const key = Object.keys(data).find(k => data[k].id == id);
+            if (key) {
+                 const updates = {};
+                 updates[`carkkis_services/${key}/name`] = document.getElementById(`serv-name-${id}`).value;
+                 updates[`carkkis_services/${key}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value);
+                 await update(ref(db), updates);
+                 showToast('Servicio actualizado', 'success');
+            }
+        };
+
+        window.addNewPayment = () => {
+            const name = document.getElementById('new-pay-name').value;
+            const url = document.getElementById('new-pay-link').value;
+            if(!name || !url) return showToast('Nombre y URL son requeridos', 'error');
+            const newRef = push(ref(db, 'carkkis_payment_links'));
+            set(newRef, { id: Date.now(), name: name, url: url });
+            showToast('Enlace de pago agregado', 'success');
+            document.getElementById('new-pay-name').value = '';
+            document.getElementById('new-pay-link').value = '';
+        };
+
+        window.updateBookingStatus = async (key, status) => {
+            await update(ref(db, `carkkis_bookings/${key}`), { status });
+            showToast('Estado actualizado', 'success');
+        };
+
+        window.updateOrderStatus = async (key, status) => {
+            await update(ref(db, `carkkis_orders/${key}`), { status });
+            showToast('Estado actualizado', 'success');
+        };
+
+        window.openModal = (id) => { document.getElementById(id).style.display = 'flex'; };
+        window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+
+        function loadAnalytics() { document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Calculando analítica...</td></tr>'; }
+
+        function loadProfits(orders) {
+            const now = new Date();
+            let total = 0, count = 0;
+            orders.forEach(o => {
+                const d = new Date(o.timestamp);
+                if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+                    if(o.status === 'Confirmado') { total += (o.total || 0); count++; }
+                }
+            });
+            document.getElementById('monthly-profit').innerText = '$' + total.toLocaleString();
+            document.getElementById('monthly-orders').innerText = count;
+            const tbody = document.querySelector('#profits-table tbody');
+            tbody.innerHTML = '';
+            orders.forEach(o => {
+                const d = new Date(o.timestamp);
+                if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+                    let cls = o.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
+                    tbody.innerHTML += `<tr><td>${o.dateStr}</td><td>${o.clientName}</td><td><span class="status-badge ${cls}">${o.status}</span></td><td>$${(o.total||0).toLocaleString()}</td></tr>`;
+                }
+            });
+        }
+
+        function showToast(msg, type) {
+            const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = 'toast';
+            const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+            const color = type === 'error' ? '#ef4444' : (type === 'success' ? '#10b981' : '#3b82f6');
+            t.style.borderLeftColor = color; t.innerHTML = `<i class="fas ${icon}" style="color:${color}"></i> <span>${msg}</span>`;
+            c.appendChild(t); setTimeout(() => t.remove(), 3000);
+        }
+
+        window.onload = () => {
+            console.log("Cargando aplicación...");
+            seedData();
+            setupListeners();
+        };
+        window.onclick = (e) => { if(e.target.classList.contains('modal')) window.closeModals(); };
+    </script>
+</body>
+</html>
