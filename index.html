@@ -279,8 +279,11 @@
                     </div>
                     <div class="table-container"><table id="services-table"><thead><tr><th>Icono</th><th>Nombre</th><th>Precio</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
                 </div>
+                
+                <!-- GESTIÓN DE PRODUCTOS CON OPCIONES -->
                 <div id="view-products" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Inventario</h2>
+                    <!-- Formulario de Agregar con Campo de Opciones -->
                     <div class="crud-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr auto;">
                         <input type="text" id="new-prod-name" placeholder="Nombre" class="admin-input">
                         <input type="number" id="new-prod-price" placeholder="Precio ($)" class="admin-input">
@@ -288,7 +291,28 @@
                         <input type="text" id="new-prod-icon" placeholder="Icono" class="admin-input">
                         <button class="btn btn-primary" onclick="window.addNewProduct()">Agregar</button>
                     </div>
-                    <div class="table-container"><table id="products-table"><thead><tr><th>Icono</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
+                    <!-- Campo Extra para Opciones -->
+                    <div style="margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                        <label style="font-weight:600; font-size:0.9rem; color:var(--azul-oscuro);">Opciones / Modelos (Separados por coma)</label>
+                        <input type="text" id="new-prod-options" placeholder="Ej: FLP-400, FLP-500, 50AH" class="admin-input" style="margin-top:5px;">
+                        <small style="color:#64748b;">Si dejas esto vacío, el cliente no podrá seleccionar un modelo específico.</small>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table id="products-table">
+                            <thead>
+                                <tr>
+                                    <th>Icono</th>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Opciones</th> <!-- NUEVA COLUMNA -->
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>
@@ -321,6 +345,20 @@
             <div style="text-align:center; margin-top:15px; font-size:0.9rem;">
                 ¿Ya tienes cuenta? <a onclick="window.closeModals(); window.openModal('loginModal');" class="btn-link">Inicia sesión</a>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE SELECCIÓN DE OPCIÓN (NUEVO) -->
+    <div id="optionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="window.closeModals()">&times;</span>
+            <h2 style="text-align:center; margin-bottom: 20px;">Seleccionar Modelo</h2>
+            <p style="text-align:center; margin-bottom: 15px; color: var(--gris-texto);" id="option-product-name"></p>
+            <div class="form-group">
+                <label>Elige la opción específica:</label>
+                <select id="product-option-select" class="modal-input"></select>
+            </div>
+            <button class="btn btn-primary" style="width:100%" onclick="window.confirmOptionSelection()">Añadir al Carrito</button>
         </div>
     </div>
 
@@ -446,9 +484,10 @@
 
         const defaultData = {
             products: [ 
-                { id: 1, name: "Aceite Sintético 5W-30", price: 85000, icon: "fa-oil-can", stock: 15 }, 
-                { id: 2, name: "Filtro de Aire", price: 25000, icon: "fa-wind", stock: 3 }, 
-                { id: 3, name: "Batería 12V", price: 450000, icon: "fa-car-battery", stock: 0 } 
+                // Ejemplo actualizado con opciones
+                { id: 1, name: "Aceite Sintético 5W-30", price: 85000, icon: "fa-oil-can", stock: 15, options: [] }, 
+                { id: 2, name: "Filtro de Aire", price: 25000, icon: "fa-wind", stock: 3, options: ["FLP-400", "FLP-500", "FLP-600"] }, 
+                { id: 3, name: "Batería 12V", price: 450000, icon: "fa-car-battery", stock: 5, options: ["50AH", "60AH", "70AH"] } 
             ],
             services: [ 
                 { id: 1, name: "Alineación y Balanceo", price: 45000, icon: "fa-car-side" }, 
@@ -466,6 +505,7 @@
         let cart = [];
         let currentUser = null;
         let currentTab = 'analytics';
+        let pendingProduct = null; // Para guardar el producto mientras el usuario elige opción
 
         window.resetDB = async () => {
             if(!confirm("ADVERTENCIA: ¿Estás seguro de RESETEAR la base de datos? Se perderán todos los pedidos y usuarios nuevos.")) return;
@@ -548,11 +588,70 @@
             container.innerHTML = '';
             if(!Array.isArray(products)) return;
             products.forEach(p => {
-                let badgeClass = 'bg-green', stockText = `Stock: ${p.stock}`, cardClass = '', btn = `<button class="btn btn-primary btn-sm" onclick="window.addToCart(${p.id})">Añadir</button>`;
-                if (p.stock === 0) { badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock'; btn = `<button class="btn btn-outline btn-sm" disabled>Agotado</button>`; } 
-                else if (p.stock < 5) { badgeClass = 'bg-yellow'; stockText = `Últimos (${p.stock})`; }
+                let badgeClass = 'bg-green', stockText = `Stock: ${p.stock}`, cardClass = '';
+                
+                // Lógica de botón según opciones
+                let btn = '';
+                const hasOptions = p.options && Array.isArray(p.options) && p.options.length > 0;
+                
+                if (p.stock === 0) { 
+                    badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock'; 
+                    btn = `<button class="btn btn-outline btn-sm" disabled>Agotado</button>`; 
+                } else if (p.stock < 5) { 
+                    badgeClass = 'bg-yellow'; stockText = `Últimos (${p.stock})`; 
+                }
+
+                if (p.stock > 0) {
+                    if (hasOptions) {
+                        btn = `<button class="btn btn-primary btn-sm" onclick="window.openOptionModal(${p.id})">Seleccionar</button>`;
+                    } else {
+                        btn = `<button class="btn btn-primary btn-sm" onclick="window.addToCart(${p.id})">Añadir</button>`;
+                    }
+                }
+
                 container.innerHTML += `<div class="product-card ${cardClass}"><div class="product-img"><i class="fas ${p.icon || 'fa-box'} fa-2x"></i></div><h3>${p.name}</h3><span class="product-price">$${(p.price || 0).toLocaleString()}</span><span class="stock-info"><span class="stock-badge ${badgeClass}">${stockText}</span></span>${btn}</div>`;
             });
+        };
+
+        // --- LÓGICA DE MODAL DE OPCIONES ---
+        window.openOptionModal = async (id) => {
+            const snap = await get(ref(db, 'carkkis_products'));
+            const rawData = snap.val();
+            const products = rawData ? Object.values(rawData) : [];
+            const p = products.find(x => x.id == id);
+            
+            if (!p) return;
+            
+            pendingProduct = p;
+            document.getElementById('option-product-name').innerText = `Modelos disponibles para: ${p.name}`;
+            
+            const select = document.getElementById('product-option-select');
+            select.innerHTML = '';
+            
+            if(p.options && Array.isArray(p.options)) {
+                p.options.forEach(opt => {
+                    select.innerHTML += `<option value="${opt}">${opt}</option>`;
+                });
+            }
+            
+            window.openModal('optionModal');
+        };
+
+        window.confirmOptionSelection = () => {
+            const select = document.getElementById('product-option-select');
+            const selectedOption = select.value;
+            
+            if (!selectedOption || !pendingProduct) return;
+
+            // Clonamos el objeto para no afectar la referencia original y añadimos la opción
+            const cartItem = { ...pendingProduct, selectedOption: selectedOption };
+            cart.push(cartItem);
+            
+            document.getElementById('cart-count').innerText = cart.length;
+            showToast(`Agregado: ${pendingProduct.name} (${selectedOption})`, 'success');
+            
+            pendingProduct = null;
+            window.closeModals();
         };
 
         window.renderPublicServices = (services) => {
@@ -598,13 +697,27 @@
             }
         };
 
+        // --- ACTUALIZADO: RENDER ADMIN PRODUCTS CON OPCIONES ---
         window.renderAdminProducts = (rawData) => {
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
-                    tbody.innerHTML += `<tr><td><i class="fas ${p.icon}"></i></td><td><input type="text" value="${p.name}" id="prod-name-${p.id}" class="admin-input"></td><td><input type="number" value="${p.price || 0}" id="prod-price-${p.id}" class="table-input"></td><td><input type="number" value="${p.stock || 0}" id="prod-stock-${p.id}" class="table-input" min="0"></td><td><button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}')"><i class="fas fa-save"></i></button> <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_products', '${p.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                    const optionsStr = (p.options && Array.isArray(p.options)) ? p.options.join(', ') : '';
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><i class="fas ${p.icon}"></i></td>
+                            <td><input type="text" value="${p.name}" id="prod-name-${p.id}" class="admin-input"></td>
+                            <td><input type="number" value="${p.price || 0}" id="prod-price-${p.id}" class="table-input"></td>
+                            <td><input type="number" value="${p.stock || 0}" id="prod-stock-${p.id}" class="table-input" min="0"></td>
+                            <td><input type="text" value="${optionsStr}" id="prod-options-${p.id}" placeholder="Ej: A, B, C" class="table-input" style="width:150px; font-size: 0.8rem;"></td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}')"><i class="fas fa-save"></i></button> 
+                                <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_products', '${p.id}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
                 }
             }
         };
@@ -620,9 +733,7 @@
             for (const key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
-                    // LIMPIEZA VISUAL: No mostrar si no tiene nombre o enlace
                     if(!p.name || !p.url) continue; 
-
                     tbody.innerHTML += `
                         <tr>
                             <td><input type="text" value="${p.name}" id="pay-name-${p.id}" class="admin-input"></td>
@@ -636,27 +747,22 @@
             }
         };
 
-        // --- FUNCIÓN LIMPIAR DE BASE DE DATOS ---
         window.cleanUndefinedPayments = async () => {
             if(!confirm("¿Eliminar registros vacíos o corruptos?")) return;
             const snap = await get(ref(db, 'carkkis_payment_links'));
             const data = snap.val();
             if (!data) return showToast("No hay datos para limpiar", "info");
-
             let count = 0;
             const updates = {};
-            
             for (const key in data) {
                 if (data.hasOwnProperty(key)) {
                     const p = data[key];
-                    // Si está vacío o undefined, marcamos para borrar
                     if (!p.name || !p.url || p.name === "undefined" || p.url === "undefined") {
                         updates[`carkkis_payment_links/${key}`] = null;
                         count++;
                     }
                 }
             }
-
             if (count > 0) {
                 await update(ref(db), updates);
                 showToast(`Se eliminaron ${count} registros basura`, "success");
@@ -665,35 +771,77 @@
             }
         };
 
-        // --- FUNCIÓN ACTUALIZAR PAGOS CORREGIDA ---
         window.updatePayment = async (id) => {
             const snap = await get(ref(db, 'carkkis_payment_links'));
             const data = snap.val();
-            
             let firebaseKey = null;
             for (const k in data) {
-                if (data[k].id == id) {
-                    firebaseKey = k;
-                    break;
-                }
+                if (data[k].id == id) { firebaseKey = k; break; }
             }
-
-            if (!firebaseKey) return showToast('Error: No se encontró el pago en la base de datos', 'error');
-
+            if (!firebaseKey) return showToast('Error: No se encontró el pago', 'error');
             const newName = document.getElementById(`pay-name-${id}`).value;
             const newUrl = document.getElementById(`pay-url-${id}`).value;
-
             if(!newName || !newUrl) return showToast('Nombre y URL son requeridos', 'error');
-
             const updates = {};
             updates[`carkkis_payment_links/${firebaseKey}/name`] = newName;
             updates[`carkkis_payment_links/${firebaseKey}/url`] = newUrl;
-            
             await update(ref(db), updates);
-            showToast('Enlace actualizado correctamente', 'success');
+            showToast('Enlace actualizado', 'success');
+        };
+
+        // --- ACTUALIZADO: AGREGAR Y ACTUALIZAR PRODUCTOS CON OPCIONES ---
+        window.addNewProduct = () => {
+            const name = document.getElementById('new-prod-name').value;
+            const price = document.getElementById('new-prod-price').value;
+            const stock = document.getElementById('new-prod-stock').value;
+            const icon = document.getElementById('new-prod-icon').value || 'fa-box';
+            const optionsStr = document.getElementById('new-prod-options').value;
+            
+            if(!name || !price) return showToast('Campos requeridos', 'error');
+            
+            // Convertir string de opciones a array
+            let optionsArr = [];
+            if(optionsStr.trim()) {
+                optionsArr = optionsStr.split(',').map(s => s.trim()).filter(s => s !== '');
+            }
+            
+            const newRef = push(ref(db, 'carkkis_products'));
+            set(newRef, { id: Date.now(), name, price: parseInt(price), stock: parseInt(stock || 10), icon, options: optionsArr });
+            
+            showToast('Producto agregado', 'success');
+            // Limpiar campos
+            document.getElementById('new-prod-name').value = ''; 
+            document.getElementById('new-prod-price').value = ''; 
+            document.getElementById('new-prod-stock').value = ''; 
+            document.getElementById('new-prod-icon').value = '';
+            document.getElementById('new-prod-options').value = '';
+        };
+
+        window.updateProduct = async (id) => {
+            const snap = await get(ref(db, 'carkkis_products'));
+            const products = snap.val();
+            const key = Object.keys(products).find(k => products[k].id == id);
+            if (key) {
+                const updates = {};
+                updates[`carkkis_products/${key}/name`] = document.getElementById(`prod-name-${id}`).value;
+                updates[`carkkis_products/${key}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
+                updates[`carkkis_products/${key}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
+                
+                // Procesar opciones
+                const optionsStr = document.getElementById(`prod-options-${id}`).value;
+                let optionsArr = [];
+                if(optionsStr.trim()) {
+                    optionsArr = optionsStr.split(',').map(s => s.trim()).filter(s => s !== '');
+                }
+                updates[`carkkis_products/${key}/options`] = optionsArr;
+
+                await update(ref(db), updates);
+                showToast('Producto actualizado', 'success');
+            }
         };
 
         window.addToCart = async (id) => {
+            // Solo se usa para productos SIN opciones ahora
             const snap = await get(ref(db, 'carkkis_products'));
             const rawData = snap.val();
             const products = rawData ? Object.values(rawData) : [];
@@ -726,7 +874,12 @@
             }
 
             const list = document.getElementById('cart-items-list'); list.innerHTML = ''; let total = 0;
-            cart.forEach(i => { total += (i.price || 0); list.innerHTML += `<li><span>${i.name}</span><span>$${(i.price || 0).toLocaleString()}</span></li>`; });
+            cart.forEach(i => { 
+                total += (i.price || 0); 
+                // Mostrar opción si existe
+                const itemText = i.selectedOption ? `${i.name} <small>(${i.selectedOption})</small>` : i.name;
+                list.innerHTML += `<li><span>${itemText}</span><span>$${(i.price || 0).toLocaleString()}</span></li>`; 
+            });
             document.getElementById('cart-total-amount').innerText = total.toLocaleString();
             
             const select = document.getElementById('order-payment');
@@ -779,11 +932,14 @@
             const linkObj = window.paymentLinks.find(l => l.name === payment);
             const paymentUrl = linkObj ? linkObj.url : '#';
 
+            // Construir string de items con opciones
+            const itemsString = cart.map(i => i.selectedOption ? `${i.name} (${i.selectedOption})` : i.name).join(', ');
+
             const newOrder = { 
                 id: orderId, 
                 clientName: finalName, 
                 clientPhone: finalPhone,
-                items: cart.map(i => i.name).join(', '), 
+                items: itemsString, 
                 total: total, 
                 status: 'Pendiente', 
                 dateStr: new Date().toLocaleDateString(), 
@@ -801,7 +957,6 @@
             showToast('Pedido registrado', 'success');
         };
 
-        // --- NUEVA LÓGICA DE VALIDACIÓN DE CITAS ---
         window.submitBooking = async (e) => {
             e.preventDefault();
             const clientName = document.getElementById('book-name').value;
@@ -815,32 +970,19 @@
             if(!clientName || !clientPhone) return showToast('Datos de contacto requeridos', 'error');
 
             const d = new Date(`${dateVal}T${timeVal}`);
-            const dayOfWeek = d.getDay(); // 0 = Domingo, 6 = Sábado
+            const dayOfWeek = d.getDay(); 
+            if (dayOfWeek === 0) return showToast('No se agendan citas los domingos', 'error');
 
-            // --- BLOQUEO DOMINGOS (NUEVO) ---
-            if (dayOfWeek === 0) {
-                return showToast('No se agendan citas los domingos', 'error');
-            }
-
-            // --- LÓGICA DEL SÁBADO (ANTERIOR) ---
             if (dayOfWeek === 6) {
-                // 1. Validar Hora (Solo hasta medio día / 12:00 PM)
                 const [hourStr] = timeVal.split(':');
                 const hour = parseInt(hourStr);
-                
-                if (hour >= 12) {
-                    return showToast('Los sábados solo se agenda hasta las 12:00 PM', 'error');
-                }
-
-                // 2. Validar Tipo de Reparación
-                // Si el issue es ruidos, electrico o largo -> No agendar sábado
+                if (hour >= 12) return showToast('Los sábados solo se agenda hasta las 12:00 PM', 'error');
                 if (issueType === 'ruidos' || issueType === 'electrico' || issueType === 'largo') {
                     return showToast('Por política, este tipo de reparaciones no se agendan los sábados', 'error');
                 }
             }
 
             const newRef = push(ref(db, 'carkkis_bookings'));
-            
             const finalName = currentUser ? currentUser.name : clientName;
             const finalPhone = currentUser ? currentUser.phone : clientPhone;
 
@@ -858,7 +1000,6 @@
             window.closeModals(); showToast('Cita agendada', 'success'); e.target.reset();
         };
 
-        // --- GENERACIÓN DE HORAS Y SERVICIOS ---
         window.openBookingModal = async () => {
             const nameInput = document.getElementById('book-name');
             const phoneInput = document.getElementById('book-phone');
@@ -883,29 +1024,16 @@
                 s.forEach(x => { serviceSelect.innerHTML += `<option value="${x.name}">${x.name} - $${(x.price||0).toLocaleString()}</option>`; });
             }
 
-            // Generar Horarios (CAMBIO: Inicio 9:15 AM)
             const timeSelect = document.getElementById('book-time');
             timeSelect.innerHTML = '<option value="">Seleccione...</option>';
-            
-            // Inicio: 9 horas, 15 minutos
-            let currentHour = 9;
-            let currentMinute = 15;
-            const endHour = 18; // 6 PM fin del día
-
+            let currentHour = 9; let currentMinute = 15; const endHour = 18;
             while (currentHour < endHour) {
-                // Formatear hora HH:MM
                 const hourStr = currentHour < 10 ? `0${currentHour}` : currentHour;
                 const minStr = currentMinute < 10 ? `0${currentMinute}` : currentMinute;
                 const timeStr = `${hourStr}:${minStr}`;
-                
                 timeSelect.innerHTML += `<option value="${timeStr}">${timeStr}</option>`;
-                
-                // Sumar 30 minutos
                 currentMinute += 30;
-                if (currentMinute >= 60) {
-                    currentMinute -= 60;
-                    currentHour++;
-                }
+                if (currentMinute >= 60) { currentMinute -= 60; currentHour++; }
             }
             window.openModal('bookingModal');
         };
@@ -916,11 +1044,7 @@
         };
 
         window.handleAuthClick = () => {
-            if(currentUser) {
-                window.logout();
-            } else {
-                window.openModal('loginModal');
-            }
+            if(currentUser) { window.logout(); } else { window.openModal('loginModal'); }
         };
 
         window.handleLogin = async () => {
@@ -939,7 +1063,6 @@
             const email = document.getElementById('reg-email').value;
             const pass = document.getElementById('reg-pass').value;
             if(!name || !phone || !email || !pass) return showToast('Datos incompletos', 'error');
-            
             const snap = await get(ref(db, 'carkkis_users'));
             const rawData = snap.val();
             const users = rawData ? Object.values(rawData) : [];
@@ -947,7 +1070,6 @@
 
             const newRef = push(ref(db, 'carkkis_users'));
             await set(newRef, { name, phone, email, pass, role: 'client' });
-            
             currentUser = { name, phone, email, pass, role: 'client' };
             loginSuccess();
         };
@@ -956,10 +1078,8 @@
             window.closeModals(); showToast(`Bienvenido, ${currentUser.name}`, 'success');
             const btn = document.getElementById('auth-btn');
             btn.innerText = "Cerrar Sesión"; btn.classList.remove('btn-primary'); btn.classList.add('btn-danger');
-            
             const regBtn = document.getElementById('reg-btn-nav');
             if(regBtn) regBtn.style.display = 'none';
-
             if(currentUser.role === 'admin') {
                 document.getElementById('public-view').classList.add('hidden');
                 document.getElementById('admin-panel').style.display = 'block';
@@ -972,10 +1092,8 @@
             document.getElementById('public-view').classList.remove('hidden');
             const btn = document.getElementById('auth-btn');
             btn.innerText = 'Iniciar Sesión'; btn.classList.remove('btn-danger'); btn.classList.add('btn-primary');
-            
             const regBtn = document.getElementById('reg-btn-nav');
             if(regBtn) regBtn.style.display = 'inline-block';
-
             showToast('Sesión cerrada', 'info');
         };
 
@@ -984,10 +1102,8 @@
             document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
             const tabEl = document.getElementById(`tab-${tab}`);
             if(tabEl) tabEl.classList.add('active');
-            
             ['analytics','profits','bookings','sales','payments','services','products'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
             document.getElementById(`view-${tab}`).classList.remove('hidden');
-            
             if(tab === 'analytics') loadAnalytics();
         };
 
@@ -995,142 +1111,4 @@
             if(!confirm('¿Eliminar?')) return;
             const snap = await get(ref(db, path));
             const data = snap.val();
-            const key = Object.keys(data).find(k => data[k].id == itemId);
-            if(key) await remove(ref(db, `${path}/${key}`));
-            showToast('Eliminado', 'info');
-        };
-
-        window.addNewProduct = () => {
-            const name = document.getElementById('new-prod-name').value;
-            const price = document.getElementById('new-prod-price').value;
-            const stock = document.getElementById('new-prod-stock').value;
-            const icon = document.getElementById('new-prod-icon').value || 'fa-box';
-            if(!name || !price) return showToast('Campos requeridos', 'error');
-            
-            const newRef = push(ref(db, 'carkkis_products'));
-            set(newRef, { id: Date.now(), name, price: parseInt(price), stock: parseInt(stock || 10), icon });
-            showToast('Producto agregado', 'success');
-            document.getElementById('new-prod-name').value = ''; 
-            document.getElementById('new-prod-price').value = ''; 
-            document.getElementById('new-prod-stock').value = ''; 
-            document.getElementById('new-prod-icon').value = '';
-        };
-
-        window.updateProduct = async (id) => {
-            const snap = await get(ref(db, 'carkkis_products'));
-            const products = snap.val();
-            const key = Object.keys(products).find(k => products[k].id == id);
-            if (key) {
-                const updates = {};
-                updates[`carkkis_products/${key}/name`] = document.getElementById(`prod-name-${id}`).value;
-                updates[`carkkis_products/${key}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
-                updates[`carkkis_products/${key}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
-                await update(ref(db), updates);
-                showToast('Producto actualizado', 'success');
-            }
-        };
-
-        window.addNewService = () => {
-             const name = document.getElementById('new-serv-name').value;
-             const price = document.getElementById('new-serv-price').value;
-             const icon = document.getElementById('new-serv-icon').value || 'fa-wrench';
-             if(!name || !price) return showToast('Campos requeridos', 'error');
-             const newRef = push(ref(db, 'carkkis_services'));
-             set(newRef, { id: Date.now(), name, price: parseInt(price), icon });
-             showToast('Servicio agregado', 'success');
-             document.getElementById('new-serv-name').value=''; document.getElementById('new-serv-price').value=''; document.getElementById('new-serv-icon').value='';
-        };
-
-        window.updateService = async (id) => {
-            const snap = await get(ref(db, 'carkkis_services'));
-            const data = snap.val();
-            const key = Object.keys(data).find(k => data[k].id == id);
-            if (key) {
-                 const updates = {};
-                 updates[`carkkis_services/${key}/name`] = document.getElementById(`serv-name-${id}`).value;
-                 updates[`carkkis_services/${key}/price`] = parseInt(document.getElementById(`serv-price-${id}`).value);
-                 await update(ref(db), updates);
-                 showToast('Servicio actualizado', 'success');
-            }
-        };
-
-        window.addNewPayment = () => {
-            const name = document.getElementById('new-pay-name').value;
-            const url = document.getElementById('new-pay-link').value;
-            
-            // Validación mejorada para evitar duplicados vacíos
-            if(!name || !url) return showToast('Nombre y URL son requeridos', 'error');
-
-            const newRef = push(ref(db, 'carkkis_payment_links'));
-            set(newRef, { 
-                id: Date.now(), 
-                name: name, 
-                url: url 
-            });
-            
-            showToast('Enlace de pago agregado', 'success');
-            
-            document.getElementById('new-pay-name').value = '';
-            document.getElementById('new-pay-link').value = '';
-        };
-
-        window.updateBookingStatus = async (key, status) => {
-            await update(ref(db, `carkkis_bookings/${key}`), { status });
-            showToast('Estado actualizado', 'success');
-        };
-
-        window.updateOrderStatus = async (key, status) => {
-            await update(ref(db, `carkkis_orders/${key}`), { status });
-            showToast('Estado actualizado', 'success');
-        };
-
-        window.openModal = (id) => { 
-            document.getElementById(id).style.display = 'flex'; 
-        };
-        
-        window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-
-        function loadAnalytics() {
-             document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Calculando analítica...</td></tr>';
-        }
-
-        function loadProfits(orders) {
-            const now = new Date();
-            let total = 0, count = 0;
-            orders.forEach(o => {
-                const d = new Date(o.timestamp);
-                if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-                    if(o.status === 'Confirmado') { total += (o.total || 0); count++; }
-                }
-            });
-            document.getElementById('monthly-profit').innerText = '$' + total.toLocaleString();
-            document.getElementById('monthly-orders').innerText = count;
-            
-            const tbody = document.querySelector('#profits-table tbody');
-            tbody.innerHTML = '';
-            orders.forEach(o => {
-                const d = new Date(o.timestamp);
-                if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-                    let cls = o.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
-                    tbody.innerHTML += `<tr><td>${o.dateStr}</td><td>${o.clientName}</td><td><span class="status-badge ${cls}">${o.status}</span></td><td>$${(o.total||0).toLocaleString()}</td></tr>`;
-                }
-            });
-        }
-
-        function showToast(msg, type) {
-            const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = 'toast';
-            const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
-            const color = type === 'error' ? '#ef4444' : (type === 'success' ? '#10b981' : '#3b82f6');
-            t.style.borderLeftColor = color; t.innerHTML = `<i class="fas ${icon}" style="color:${color}"></i> <span>${msg}</span>`;
-            c.appendChild(t); setTimeout(() => t.remove(), 3000);
-        }
-
-        window.onload = () => {
-            console.log("Cargando aplicación...");
-            seedData();
-            setupListeners();
-        };
-        window.onclick = (e) => { if(e.target.classList.contains('modal')) window.closeModals(); };
-    </script>
-</body>
-</html>
+            const key = 
