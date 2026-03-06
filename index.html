@@ -96,7 +96,7 @@
         .stat-label { color: var(--gris-texto); font-size: 0.9rem; }
         .table-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; vertical-align: top; } /* vertical-align: top para las tarjetas */
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; vertical-align: top; } 
         th { background-color: #f8fafc; color: var(--azul-oscuro); font-weight: 600; white-space: nowrap; vertical-align: middle; }
         .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
         .status-pending { background-color: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
@@ -106,64 +106,17 @@
         .table-input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; width: 80px; }
 
         /* --- ESTILOS VISUALES PARA VARIANTES (NUEVO) --- */
-        .variant-visual-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 5px;
-        }
-        
-        .variant-chips-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .variant-chip {
-            display: flex;
-            flex-direction: column;
-            background-color: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 6px 10px;
-            font-size: 0.75rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            min-width: 90px;
-            transition: all 0.2s;
-        }
-
-        .variant-chip:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
-        }
-
-        /* Indicadores de Stock en el borde izquierdo */
+        .variant-visual-wrapper { display: flex; flex-direction: column; gap: 8px; margin-bottom: 5px; }
+        .variant-chips-container { display: flex; flex-wrap: wrap; gap: 6px; }
+        .variant-chip { display: flex; flex-direction: column; background-color: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; font-size: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-width: 90px; transition: all 0.2s; }
+        .variant-chip:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
         .variant-chip.stock-ok { border-left: 4px solid var(--exito); }
         .variant-chip.stock-low { border-left: 4px solid var(--advertencia); background-color: #fffbeb; }
         .variant-chip.stock-out { border-left: 4px solid var(--peligro); background-color: #fef2f2; opacity: 0.8; }
-
         .v-name { font-weight: 700; color: var(--azul-oscuro); margin-bottom: 2px; display: block; }
         .v-meta { font-size: 0.7rem; color: var(--gris-texto); display: flex; justify-content: space-between; gap: 8px; }
-        
-        /* Input de edición más grande */
-        .variant-editor textarea {
-            width: 100%;
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
-            padding: 8px;
-            border: 1px dashed #cbd5e1;
-            border-radius: 4px;
-            background-color: #f8fafc;
-            resize: vertical;
-            min-height: 40px;
-            color: #475569;
-        }
-        .variant-editor textarea:focus {
-            outline: none;
-            border-color: var(--azul-acento);
-            background-color: white;
-            color: black;
-        }
+        .variant-editor textarea { width: 100%; font-family: 'Courier New', monospace; font-size: 0.75rem; padding: 8px; border: 1px dashed #cbd5e1; border-radius: 4px; background-color: #f8fafc; resize: vertical; min-height: 40px; color: #475569; }
+        .variant-editor textarea:focus { outline: none; border-color: var(--azul-acento); background-color: white; color: black; }
 
         /* --- VARIANTES BUILDER --- */
         .variant-row { display: flex; gap: 10px; margin-bottom: 5px; }
@@ -554,6 +507,70 @@
                 }
             } catch (e) { console.error("Error DB:", e); }
         }
+
+        // ================= FUNCIONES DE RENDERIZADO (ADMIN) =================
+        
+        // CORRECCIÓN 1: Función renderAdminBookings
+        window.renderAdminBookings = (bookings) => {
+            const tbody = document.querySelector('#bookings-table tbody');
+            tbody.innerHTML = '';
+            if (!Array.isArray(bookings)) return;
+
+            // Ordenar por fecha (más reciente primero)
+            bookings.sort((a, b) => b.timestamp - a.timestamp);
+
+            bookings.forEach(b => {
+                const statusClass = b.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
+                const row = `
+                    <tr>
+                        <td>${b.date || 'N/A'}</td>
+                        <td>${b.time || 'N/A'}</td>
+                        <td>${b.client || 'Sin nombre'}</td>
+                        <td>${b.phone || '-'}</td>
+                        <td>${b.service || 'General'} <br><small style="color:#666">${b.plate || ''}</small></td>
+                        <td><span class="status-badge ${statusClass}">${b.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline" onclick="window.updateBookingStatus('${b.id}', 'Confirmado')">✓</button>
+                            <button class="btn btn-sm btn-outline" style="color:red; border-color:red" onclick="window.updateBookingStatus('${b.id}', 'Cancelado')">✕</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        };
+
+        // CORRECCIÓN 2: Función renderAdminSales
+        window.renderAdminSales = (sales) => {
+            const tbody = document.querySelector('#sales-table tbody');
+            tbody.innerHTML = '';
+            if (!Array.isArray(sales)) return;
+
+            // Ordenar por fecha
+            sales.sort((a, b) => b.timestamp - a.timestamp);
+
+            sales.forEach(s => {
+                const statusClass = s.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
+                // Truncar items si son muy largos
+                const itemsShort = s.items && s.items.length > 40 ? s.items.substring(0, 40) + '...' : (s.items || '-');
+                
+                const row = `
+                    <tr>
+                        <td><small>${s.id.substring(0,8)}...</small></td>
+                        <td>${s.clientName || 'Cliente'}</td>
+                        <td>${s.clientPhone || '-'}</td>
+                        <td title="${s.items}">${itemsShort}</td>
+                        <td>${s.address || '-'}</td>
+                        <td style="font-weight:bold;">$${(s.total || 0).toLocaleString()}</td>
+                        <td><span class="status-badge ${statusClass}">${s.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline" onclick="window.updateOrderStatus('${s.id}', 'Confirmado')">✓</button>
+                            <button class="btn btn-sm btn-outline" style="color:red; border-color:red" onclick="window.updateOrderStatus('${s.id}', 'Cancelado')">✕</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        };
 
         function setupListeners() {
             onValue(ref(db, 'carkkis_products'), (snap) => {
