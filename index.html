@@ -96,14 +96,74 @@
         .stat-label { color: var(--gris-texto); font-size: 0.9rem; }
         .table-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; vertical-align: middle; }
-        th { background-color: #f8fafc; color: var(--azul-oscuro); font-weight: 600; white-space: nowrap; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; vertical-align: top; } /* vertical-align: top para las tarjetas */
+        th { background-color: #f8fafc; color: var(--azul-oscuro); font-weight: 600; white-space: nowrap; vertical-align: middle; }
         .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
         .status-pending { background-color: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
         .status-confirmed { background-color: #ecfdf5; color: #047857; border: 1px solid #d1fae5; }
         .admin-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
         .crud-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .table-input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; width: 80px; }
+
+        /* --- ESTILOS VISUALES PARA VARIANTES (NUEVO) --- */
+        .variant-visual-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        
+        .variant-chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .variant-chip {
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            min-width: 90px;
+            transition: all 0.2s;
+        }
+
+        .variant-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+        }
+
+        /* Indicadores de Stock en el borde izquierdo */
+        .variant-chip.stock-ok { border-left: 4px solid var(--exito); }
+        .variant-chip.stock-low { border-left: 4px solid var(--advertencia); background-color: #fffbeb; }
+        .variant-chip.stock-out { border-left: 4px solid var(--peligro); background-color: #fef2f2; opacity: 0.8; }
+
+        .v-name { font-weight: 700; color: var(--azul-oscuro); margin-bottom: 2px; display: block; }
+        .v-meta { font-size: 0.7rem; color: var(--gris-texto); display: flex; justify-content: space-between; gap: 8px; }
+        
+        /* Input de edición más grande */
+        .variant-editor textarea {
+            width: 100%;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            padding: 8px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 4px;
+            background-color: #f8fafc;
+            resize: vertical;
+            min-height: 40px;
+            color: #475569;
+        }
+        .variant-editor textarea:focus {
+            outline: none;
+            border-color: var(--azul-acento);
+            background-color: white;
+            color: black;
+        }
 
         /* --- VARIANTES BUILDER --- */
         .variant-row { display: flex; gap: 10px; margin-bottom: 5px; }
@@ -144,6 +204,7 @@
             .wa-text { align-items: center; }
             .nav-actions { width: 100%; justify-content: flex-end; margin-top: 10px; }
             .nav-actions button { font-size: 0.8rem; padding: 8px 12px; }
+            .variant-chips-container { flex-direction: column; width: 100%; }
         }
     </style>
 </head>
@@ -312,7 +373,7 @@
                                     <th>Nombre</th>
                                     <th>Precio</th>
                                     <th>Stock G.</th>
-                                    <th>Variantes (N:P:S)</th>
+                                    <th>Variantes</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
@@ -414,7 +475,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Actualizado: variantes ahora tienen stock propio
         const defaultData = {
             products: [ 
                 { id: 1, name: "Aceite Sintético 5W-30", price: 85000, icon: "fa-oil-can", stock: 15, options: [] }, 
@@ -629,8 +689,7 @@
             const cartItem = { 
                 ...pendingProduct, 
                 selectedOption: selectedName,
-                // Guardamos los datos exactos de la opción para no depender de la DB en el carrito
-                variantId: selectedOption.name, // Usamos el nombre como ID temporal simple
+                variantId: selectedOption.name,
                 price: selectedOption.price,
                 originalStockRef: { productId: pendingProduct.id, optionName: selectedName }
             };
@@ -642,6 +701,7 @@
             window.closeModals();
         };
 
+        // --- FUNCIÓN MEJORADA DE RENDERIZADO DE PRODUCTOS ADMIN ---
         window.renderAdminProducts = (rawData) => {
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
@@ -650,10 +710,46 @@
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
-                    // Formato: Nombre:Precio:Stock
+                    
+                    // Generamos el string plano para edición
                     const optionsStr = (p.options && Array.isArray(p.options)) 
                         ? p.options.map(o => `${o.name}:${o.price}:${o.stock}`).join(', ') 
                         : '';
+
+                    // --- VISUALIZACIÓN DE TARJETAS (CHIPS) ---
+                    let chipsHtml = '<div class="variant-visual-wrapper">';
+                    
+                    if (p.options && Array.isArray(p.options) && p.options.length > 0) {
+                        chipsHtml += '<div class="variant-chips-container">';
+                        p.options.forEach(o => {
+                            // Determinar clase según stock
+                            let statusClass = 'stock-ok';
+                            if(o.stock === 0) statusClass = 'stock-out';
+                            else if(o.stock < 5) statusClass = 'stock-low';
+
+                            chipsHtml += `
+                                <div class="variant-chip ${statusClass}">
+                                    <span class="v-name">${o.name}</span>
+                                    <div class="v-meta">
+                                        <span>$${o.price}</span>
+                                        <span>Stk: ${o.stock}</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        chipsHtml += '</div>';
+                    } else {
+                        chipsHtml += '<span style="color:#cbd5e1; font-style:italic; font-size:0.75rem;">Sin variantes</span>';
+                    }
+                    chipsHtml += '</div>';
+                    // ----------------------------------------------
+
+                    // Input de edición (Textarea para mejor manejo)
+                    const inputHtml = `
+                        <div class="variant-editor" style="margin-top:5px;">
+                            <textarea id="prod-options-${p.id}" placeholder="Formato: Nombre:Precio:Stock, Nombre2:Precio2:Stock2">${optionsStr}</textarea>
+                        </div>
+                    `;
                     
                     tbody.innerHTML += `
                         <tr>
@@ -661,7 +757,8 @@
                             <td><input type="text" value="${p.name}" id="prod-name-${p.id}" class="admin-input"></td>
                             <td><input type="number" value="${p.price || 0}" id="prod-price-${p.id}" class="table-input"></td>
                             <td><input type="number" value="${p.stock || 0}" id="prod-stock-${p.id}" class="table-input" min="0"></td>
-                            <td><input type="text" value="${optionsStr}" id="prod-options-${p.id}" placeholder="N:P:S" class="table-input" style="width:200px; font-size: 0.8rem;"></td>
+                            <!-- Inyectamos tarjetas visuales y editor -->
+                            <td>${chipsHtml}${inputHtml}</td>
                             <td>
                                 <button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}', '${key}')"><i class="fas fa-save"></i></button> 
                                 <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_products', '${key}')"><i class="fas fa-trash"></i></button>
@@ -701,6 +798,7 @@
             document.getElementById('variants-list').innerHTML = '';
         };
 
+        // --- FUNCIÓN ACTUALIZADA PARA LEER DEL TEXTAREA ---
         window.updateProduct = async (id, firebaseKey) => {
             if(!firebaseKey) return showToast('Error clave', 'error');
             
@@ -715,18 +813,20 @@
             updates[`carkkis_products/${firebaseKey}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
             updates[`carkkis_products/${firebaseKey}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
             
-            // Parsear string de opciones: Nombre:Precio:Stock
-            const optionsStr = document.getElementById(`prod-options-${id}`).value;
+            // Leer del textarea y limpiar saltos de línea por comas
+            let rawText = document.getElementById(`prod-options-${id}`).value || "";
+            // Reemplaza saltos de línea por comas y limpia espacios dobles
+            let optionsStr = rawText.replace(/\n/g, ',').replace(/,\s*,/g, ',').trim();
+            
             let optionsArr = [];
-            if(optionsStr.trim()) {
+            if(optionsStr) {
                 const parts = optionsStr.split(',');
                 parts.forEach(part => {
                     const subParts = part.split(':');
-                    // Manejo flexible para datos viejos (solo Precio) vs nuevos (Precio:Stock)
                     if(subParts.length >= 2) {
                         const name = subParts[0].trim();
                         const price = parseInt(subParts[1].trim());
-                        const stock = subParts.length >= 3 ? parseInt(subParts[2].trim()) : 10; // Default 10 si no hay stock
+                        const stock = subParts.length >= 3 ? parseInt(subParts[2].trim()) : 10;
                         optionsArr.push({ name, price, stock });
                     }
                 });
@@ -870,7 +970,6 @@
             window.openModal('cartModal');
         };
 
-        // --- LÓGICA DE ACTUALIZACIÓN DE STOCK POR VARIANTE ---
         window.confirmPurchase = async () => {
             const clientName = document.getElementById('order-name').value;
             const clientPhone = document.getElementById('order-phone').value;
@@ -891,15 +990,12 @@
                     const product = products[productKey];
                     
                     if (cartItem.selectedOption) {
-                        // Es una variante: buscar y restar stock específico
                         const optionIndex = product.options.findIndex(o => o.name === cartItem.selectedOption);
                         if (optionIndex > -1 && product.options[optionIndex].stock > 0) {
                             product.options[optionIndex].stock -= 1;
-                            // Guardamos todo el objeto producto modificado (Firebase Arrays updates son complejos, sobreescribir es seguro aquí)
                             updates[`carkkis_products/${productKey}`] = product;
                         }
                     } else {
-                        // Es producto normal
                         if(product.stock > 0) {
                             product.stock -= 1;
                             updates[`carkkis_products/${productKey}`] = product;
