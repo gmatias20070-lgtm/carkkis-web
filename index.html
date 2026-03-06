@@ -107,7 +107,7 @@
         .crud-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .table-input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; width: 80px; }
 
-        /* --- ESTILOS VISUALES PARA VARIANTES (NUEVO) --- */
+        /* --- ESTILOS VISUALES PARA VARIANTES (VISTA NORMAL) --- */
         .variant-visual-wrapper { display: flex; flex-direction: column; gap: 8px; margin-bottom: 5px; }
         .variant-chips-container { display: flex; flex-wrap: wrap; gap: 6px; }
         .variant-chip { display: flex; flex-direction: column; background-color: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; font-size: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); min-width: 90px; transition: all 0.2s; }
@@ -125,7 +125,7 @@
         .variant-row input { flex: 1; }
         .remove-variant { color: var(--peligro); cursor: pointer; padding: 5px; }
 
-        /* --- ESTILOS EXCEL INVENTORY --- */
+        /* --- ESTILOS EXCEL INVENTORY (MEJORADOS) --- */
         .excel-view-container {
             background: white;
             border: 1px solid var(--excel-border);
@@ -154,7 +154,6 @@
             padding: 4px 8px;
             vertical-align: top;
         }
-        /* Input que parece celda de Excel */
         .excel-input {
             width: 100%;
             border: none;
@@ -171,28 +170,58 @@
         }
         .excel-number { text-align: right; }
         
-        /* Mini tabla interna para variantes */
-        .mini-variant-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.75rem;
-            background-color: #fafafa;
+        /* --- EDITOR DE VARIANTES EN EXCEL --- */
+        .excel-variants-wrapper {
+            background-color: #f9fafb;
+            padding: 4px;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+            min-width: 250px;
         }
-        .mini-variant-table th {
-            background-color: #e5e7eb;
+        .excel-variant-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 0.8fr auto;
+            gap: 4px;
+            margin-bottom: 4px;
+            align-items: center;
+        }
+        .excel-variant-input {
+            width: 100%;
             border: 1px solid #d1d5db;
             padding: 2px 4px;
-            font-weight: 600;
-            text-align: left;
             font-size: 0.7rem;
+            border-radius: 2px;
+            background: white;
         }
-        .mini-variant-table td {
-            border: 1px solid #e5e7eb;
-            padding: 2px 4px;
+        .excel-variant-input:focus {
+            border-color: var(--azul-acento);
+            outline: none;
         }
-        .mini-stock-low { color: var(--advertencia); font-weight: bold; }
-        .mini-stock-out { color: var(--peligro); font-weight: bold; text-decoration: line-through; }
-        .mini-stock-ok { color: var(--exito); font-weight: bold; }
+        .btn-remove-excel-var {
+            color: var(--peligro);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 2px;
+        }
+        .btn-remove-excel-var:hover { color: #b91c1c; }
+        
+        .btn-add-variant-excel {
+            width: 100%;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px dashed #7dd3fc;
+            padding: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 4px;
+            text-align: center;
+        }
+        .btn-add-variant-excel:hover {
+            background-color: #bae6fd;
+        }
 
         /* --- MODALES --- */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
@@ -228,9 +257,9 @@
             .wa-text { align-items: center; }
             .nav-actions { width: 100%; justify-content: flex-end; margin-top: 10px; }
             .nav-actions button { font-size: 0.8rem; padding: 8px 12px; }
-            .variant-chips-container { flex-direction: column; width: 100%; }
             .excel-table th, .excel-table td { font-size: 0.7rem; padding: 2px 4px; }
-            .mini-variant-table { display: none; } /* Ocultar mini tablas en móvil muy pequeño para no romper */
+            .excel-variant-row { grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 6px; }
+            .excel-variant-input { width: 100%; }
         }
     </style>
 </head>
@@ -389,12 +418,12 @@
                     </div>
                 </div>
 
-                <!-- ================= NUEVA VISTA: INVENTARIO EXCEL ================= -->
+                <!-- ================= VISTA: INVENTARIO EXCEL (EDITABLE) ================= -->
                 <div id="view-inventory-excel">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
                         <h2 style="margin:0;">Inventario Maestro (Estilo Excel)</h2>
                         <div>
-                            <span style="font-size:0.8rem; color:#64748b; margin-right:10px;">Edición rápida habilitada</span>
+                            <span style="font-size:0.8rem; color:#64748b; margin-right:10px;">Las variantes también se editan aquí</span>
                             <button class="btn btn-sm btn-success" onclick="window.saveAllExcelChanges()"><i class="fas fa-save"></i> Guardar Todo</button>
                         </div>
                     </div>
@@ -409,7 +438,7 @@
                                     <th style="width: 150px;">Fabricante</th>
                                     <th style="width: 100px;">Precio Base</th>
                                     <th style="width: 80px;">Stock Gen.</th>
-                                    <th>Variantes (Detalle)</th>
+                                    <th>Variantes (Editables)</th>
                                     <th style="width: 80px;">Acción</th>
                                 </tr>
                             </thead>
@@ -550,7 +579,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- ACTUALIZACIÓN DE DATOS POR DEFECTO ---
         const defaultData = {
             products: [ 
                 { id: 1, name: "Aceite Sintético 5W-30", manufacturer: "Mobil", price: 85000, icon: "fa-oil-can", stock: 15, options: [] }, 
@@ -569,11 +597,10 @@
 
         let cart = [];
         let currentUser = null;
-        let currentTab = 'inventory-excel'; // Iniciamos en la nueva vista
+        let currentTab = 'inventory-excel';
         let pendingProduct = null;
 
         window.showSection = (id) => {
-            console.log("Navegando a:", id);
             const home = document.getElementById('home');
             const store = document.getElementById('store');
             const services = document.getElementById('services');
@@ -637,26 +664,10 @@
             const tbody = document.querySelector('#bookings-table tbody');
             tbody.innerHTML = '';
             if (!Array.isArray(bookings)) return;
-
             bookings.sort((a, b) => b.timestamp - a.timestamp);
-
             bookings.forEach(b => {
                 const statusClass = b.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
-                const row = `
-                    <tr>
-                        <td>${b.date || 'N/A'}</td>
-                        <td>${b.time || 'N/A'}</td>
-                        <td>${b.client || 'Sin nombre'}</td>
-                        <td>${b.phone || '-'}</td>
-                        <td>${b.service || 'General'} <br><small style="color:#666">${b.plate || ''}</small></td>
-                        <td><span class="status-badge ${statusClass}">${b.status}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-outline" onclick="window.updateBookingStatus('${b.id}', 'Confirmado')">✓</button>
-                            <button class="btn btn-sm btn-outline" style="color:red; border-color:red" onclick="window.updateBookingStatus('${b.id}', 'Cancelado')">✕</button>
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
+                tbody.innerHTML += `<tr><td>${b.date || 'N/A'}</td><td>${b.time || 'N/A'}</td><td>${b.client || 'Sin nombre'}</td><td>${b.phone || '-'}</td><td>${b.service || 'General'} <br><small style="color:#666">${b.plate || ''}</small></td><td><span class="status-badge ${statusClass}">${b.status}</span></td><td><button class="btn btn-sm btn-outline" onclick="window.updateBookingStatus('${b.id}', 'Confirmado')">✓</button><button class="btn btn-sm btn-outline" style="color:red; border-color:red" onclick="window.updateBookingStatus('${b.id}', 'Cancelado')">✕</button></td></tr>`;
             });
         };
 
@@ -664,34 +675,16 @@
             const tbody = document.querySelector('#sales-table tbody');
             tbody.innerHTML = '';
             if (!Array.isArray(sales)) return;
-
             sales.sort((a, b) => b.timestamp - a.timestamp);
-
             sales.forEach(s => {
                 const statusClass = s.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
                 const itemsShort = s.items && s.items.length > 40 ? s.items.substring(0, 40) + '...' : (s.items || '-');
-                
-                const row = `
-                    <tr>
-                        <td><small>${s.id.substring(0,8)}...</small></td>
-                        <td>${s.clientName || 'Cliente'}</td>
-                        <td>${s.clientPhone || '-'}</td>
-                        <td title="${s.items}">${itemsShort}</td>
-                        <td>${s.address || '-'}</td>
-                        <td style="font-weight:bold;">$${(s.total || 0).toLocaleString()}</td>
-                        <td><span class="status-badge ${statusClass}">${s.status}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-outline" onclick="window.updateOrderStatus('${s.id}', 'Confirmado')">✓</button>
-                            <button class="btn btn-sm btn-outline" style="color:red; border-color:red" onclick="window.updateOrderStatus('${s.id}', 'Cancelado')">✕</button>
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
+                tbody.innerHTML += `<tr><td><small>${s.id.substring(0,8)}...</small></td><td>${s.clientName || 'Cliente'}</td><td>${s.clientPhone || '-'}</td><td title="${s.items}">${itemsShort}</td><td>${s.address || '-'}</td><td style="font-weight:bold;">$${(s.total || 0).toLocaleString()}</td><td><span class="status-badge ${statusClass}">${s.status}</span></td><td><button class="btn btn-sm btn-outline" onclick="window.updateOrderStatus('${s.id}', 'Confirmado')">✓</button><button class="btn btn-sm btn-outline" style="color:red; border-color:red" onclick="window.updateOrderStatus('${s.id}', 'Cancelado')">✕</button></td></tr>`;
             });
         };
 
         // ==========================================
-        // NUEVO: RENDERIZADO INVENTARIO EXCEL
+        // NUEVO: RENDERIZADO INVENTARIO EXCEL (EDITABLE)
         // ==========================================
         window.renderExcelInventory = (rawData) => {
             const tbody = document.querySelector('#excel-inventory-table tbody');
@@ -701,38 +694,23 @@
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
-                    // Safe defaults for manufacturer
                     const manufacturer = p.manufacturer || '';
 
-                    // Construcción de la mini-tabla de variantes
-                    let variantsHtml = '<div style="font-size:0.7rem; color:#94a3b8; font-style:italic;">Sin variantes</div>';
+                    // Generar filas de variantes editables
+                    let variantsHtml = '';
                     if(p.options && Array.isArray(p.options) && p.options.length > 0) {
-                        variantsHtml = `
-                            <table class="mini-variant-table">
-                                <thead>
-                                    <tr>
-                                        <th>Variante</th>
-                                        <th>Precio</th>
-                                        <th>Stock</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                        `;
-                        p.options.forEach((opt, idx) => {
-                            // Clases para stock
-                            let stockClass = 'mini-stock-ok';
-                            if(opt.stock === 0) stockClass = 'mini-stock-out';
-                            else if(opt.stock < 5) stockClass = 'mini-stock-low';
-
+                        p.options.forEach(opt => {
                             variantsHtml += `
-                                <tr>
-                                    <td>${opt.name}</td>
-                                    <td>$${opt.price.toLocaleString()}</td>
-                                    <td class="${stockClass}">${opt.stock}</td>
-                                </tr>
+                                <div class="excel-variant-row">
+                                    <input type="text" class="excel-variant-input var-name" value="${opt.name}" placeholder="Nombre">
+                                    <input type="number" class="excel-variant-input var-price" value="${opt.price}" placeholder="$">
+                                    <input type="number" class="excel-variant-input var-stock" value="${opt.stock}" placeholder="Stk">
+                                    <button class="btn-remove-excel-var" onclick="this.parentElement.remove()" title="Eliminar variante"><i class="fas fa-times"></i></button>
+                                </div>
                             `;
                         });
-                        variantsHtml += `</tbody></table>`;
+                    } else {
+                        variantsHtml = `<div style="font-size:0.7rem; color:#9ca3af; text-align:center; padding:4px; font-style:italic;">Sin variantes</div>`;
                     }
 
                     const row = `
@@ -752,7 +730,10 @@
                                 <input type="number" class="excel-input excel-number" value="${p.stock || 0}" id="excel-stock-${p.id}" data-key="${key}">
                             </td>
                             <td>
-                                ${variantsHtml}
+                                <div class="excel-variants-wrapper" id="excel-variants-${p.id}">
+                                    ${variantsHtml}
+                                </div>
+                                <button class="btn-add-variant-excel" onclick="window.addExcelVariantRow(${p.id})">+ Agregar Variante</button>
                             </td>
                             <td style="text-align:center;">
                                 <button class="btn btn-sm btn-success" onclick="window.saveExcelRow('${p.id}', '${key}')" title="Guardar fila"><i class="fas fa-check"></i></button>
@@ -764,52 +745,121 @@
             }
         };
 
-        // Guardar una fila específica del Excel
+        // Función para agregar fila de variante en el Excel
+        window.addExcelVariantRow = (productId) => {
+            const container = document.getElementById(`excel-variants-${productId}`);
+            if(!container) return;
+
+            // Remover el mensaje "Sin variantes" si existe
+            const placeholder = container.querySelector('div[style*="font-style:italic"]');
+            if(placeholder) placeholder.remove();
+
+            const div = document.createElement('div');
+            div.className = 'excel-variant-row';
+            div.innerHTML = `
+                <input type="text" class="excel-variant-input var-name" placeholder="Nombre">
+                <input type="number" class="excel-variant-input var-price" placeholder="$">
+                <input type="number" class="excel-variant-input var-stock" placeholder="Stk">
+                <button class="btn-remove-excel-var" onclick="this.parentElement.remove()" title="Eliminar variante"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(div);
+            
+            // Enfocar el primer input
+            div.querySelector('.var-name').focus();
+        };
+
+        // Guardar una fila específica del Excel (INCLUYENDO VARIANTES)
         window.saveExcelRow = async (id, firebaseKey) => {
             if(!firebaseKey) return showToast('Error clave', 'error');
             
             const updates = {};
-            // Obtener valores de los inputs excel
+            
+            // 1. Guardar datos principales
             updates[`carkkis_products/${firebaseKey}/name`] = document.getElementById(`excel-name-${id}`).value;
             updates[`carkkis_products/${firebaseKey}/manufacturer`] = document.getElementById(`excel-manufacturer-${id}`).value;
             updates[`carkkis_products/${firebaseKey}/price`] = parseInt(document.getElementById(`excel-price-${id}`).value);
             updates[`carkkis_products/${firebaseKey}/stock`] = parseInt(document.getElementById(`excel-stock-${id}`).value);
 
+            // 2. Guardar variantes desde el DOM
+            const variantContainer = document.getElementById(`excel-variants-${id}`);
+            const variantRows = variantContainer.querySelectorAll('.excel-variant-row');
+            const optionsArr = [];
+
+            variantRows.forEach(row => {
+                const name = row.querySelector('.var-name').value.trim();
+                const price = row.querySelector('.var-price').value;
+                const stock = row.querySelector('.var-stock').value;
+
+                // Solo agregar si tiene nombre y precio
+                if(name) {
+                    optionsArr.push({
+                        name: name,
+                        price: parseInt(price) || 0,
+                        stock: parseInt(stock) || 0
+                    });
+                }
+            });
+
+            updates[`carkkis_products/${firebaseKey}/options`] = optionsArr;
+
             try {
                 await update(ref(db), updates);
-                showToast('Fila actualizada', 'success');
+                showToast('Fila y variantes guardadas', 'success');
             } catch(e) {
                 showToast('Error al guardar', 'error');
             }
         };
         
-        // Guardar todos los cambios (Opcional, pero útil para UX)
+        // Guardar todos los cambios (Recorriendo variantes también)
         window.saveAllExcelChanges = async () => {
-            if(!confirm("¿Guardar todos los cambios visibles en la tabla?")) return;
+            if(!confirm("¿Guardar todos los cambios visibles (incluyendo variantes)?")) return;
             
-            const inputs = document.querySelectorAll('#excel-inventory-table input');
-            if(inputs.length === 0) return;
+            const tableRows = document.querySelectorAll('#excel-inventory-table tbody tr');
+            if(tableRows.length === 0) return;
 
             const updates = {};
             let count = 0;
 
-            inputs.forEach(input => {
-                const key = input.getAttribute('data-key');
-                const field = input.id.split('-')[1]; // name, manufacturer, price, stock
-                let val = input.value;
+            tableRows.forEach(tr => {
+                // Encontrar el ID del producto en esta fila
+                const mainNameInput = tr.querySelector('input[id^="excel-name-"]');
+                if(!mainNameInput) return;
+                
+                const prodId = mainNameInput.id.replace('excel-name-', '');
+                const key = mainNameInput.getAttribute('data-key');
 
-                if(field === 'price' || field === 'stock') val = parseInt(val);
+                // Datos principales
+                updates[`carkkis_products/${key}/name`] = mainNameInput.value;
+                updates[`carkkis_products/${key}/manufacturer`] = tr.querySelector(`#excel-manufacturer-${prodId}`).value;
+                updates[`carkkis_products/${key}/price`] = parseInt(tr.querySelector(`#excel-price-${prodId}`).value);
+                updates[`carkkis_products/${key}/stock`] = parseInt(tr.querySelector(`#excel-stock-${prodId}`).value);
 
-                if(key && field) {
-                    updates[`carkkis_products/${key}/${field}`] = val;
-                    count++;
-                }
+                // Datos de variantes
+                const variantContainer = document.getElementById(`excel-variants-${prodId}`);
+                const variantRows = variantContainer.querySelectorAll('.excel-variant-row');
+                const optionsArr = [];
+
+                variantRows.forEach(row => {
+                    const name = row.querySelector('.var-name').value.trim();
+                    const price = row.querySelector('.var-price').value;
+                    const stock = row.querySelector('.var-stock').value;
+                    if(name) {
+                        optionsArr.push({
+                            name: name,
+                            price: parseInt(price) || 0,
+                            stock: parseInt(stock) || 0
+                        });
+                    }
+                });
+                updates[`carkkis_products/${key}/options`] = optionsArr;
+                
+                count++;
             });
 
             if(count > 0) {
                 try {
                     await update(ref(db), updates);
-                    showToast(`${count} campos actualizados`, 'success');
+                    showToast(`${count} productos y sus variantes actualizados`, 'success');
                 } catch(e) {
                     showToast('Error masivo', 'error');
                 }
@@ -823,7 +873,7 @@
                 const data = rawData ? Object.values(rawData) : [];
                 window.renderPublicStore(data);
                 window.renderAdminProducts(rawData);
-                window.renderExcelInventory(rawData); // Renderizar la nueva vista
+                window.renderExcelInventory(rawData); 
             });
             onValue(ref(db, 'carkkis_services'), (snap) => {
                 const rawData = snap.val();
@@ -848,7 +898,6 @@
             });
         }
 
-        // --- AGREGAR FILA DE VARIANTE ---
         window.addVariantRow = (name = '', price = '', stock = '') => {
             const container = document.getElementById('variants-list');
             const div = document.createElement('div');
@@ -870,7 +919,6 @@
                 let badgeClass = 'bg-green', stockText = `Stock: ${p.stock}`, cardClass = '';
                 let displayPrice = p.price;
                 let availableOptions = [];
-                
                 const hasOptions = p.options && p.options.length > 0;
                 
                 if (hasOptions) {
@@ -912,10 +960,8 @@
             const p = products.find(x => x.id == id);
             
             if (!p) return;
-            
             pendingProduct = p;
             document.getElementById('option-product-name').innerText = `Modelos disponibles para: ${p.name}`;
-            
             const select = document.getElementById('product-option-select');
             select.innerHTML = '';
             
@@ -926,23 +972,16 @@
                     }
                 });
             }
-            
-            if(select.innerHTML === '') {
-                select.innerHTML = '<option value="">Sin stock disponible</option>';
-            }
-            
+            if(select.innerHTML === '') select.innerHTML = '<option value="">Sin stock disponible</option>';
             window.openModal('optionModal');
         };
 
         window.confirmOptionSelection = () => {
             const select = document.getElementById('product-option-select');
             const selectedName = select.value;
-            
             if (!selectedName || !pendingProduct) return;
-
             const selectedOption = pendingProduct.options.find(o => o.name === selectedName);
             if(!selectedOption) return;
-
             const cartItem = { 
                 ...pendingProduct, 
                 selectedOption: selectedName,
@@ -950,7 +989,6 @@
                 price: selectedOption.price,
                 originalStockRef: { productId: pendingProduct.id, optionName: selectedName }
             };
-            
             cart.push(cartItem);
             document.getElementById('cart-count').innerText = cart.length;
             showToast(`Agregado: ${pendingProduct.name} (${selectedName})`, 'success');
@@ -958,7 +996,6 @@
             window.closeModals();
         };
 
-        // --- FUNCIÓN MEJORADA DE RENDERIZADO DE PRODUCTOS ADMIN (VISTA ORIGINAL) ---
         window.renderAdminProducts = (rawData) => {
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
@@ -967,11 +1004,9 @@
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
-                    
                     const optionsStr = (p.options && Array.isArray(p.options)) 
                         ? p.options.map(o => `${o.name}:${o.price}:${o.stock}`).join(', ') 
                         : '';
-
                     let chipsHtml = '<div class="variant-visual-wrapper">';
                     if (p.options && Array.isArray(p.options) && p.options.length > 0) {
                         chipsHtml += '<div class="variant-chips-container">';
@@ -979,14 +1014,10 @@
                             let statusClass = 'stock-ok';
                             if(o.stock === 0) statusClass = 'stock-out';
                             else if(o.stock < 5) statusClass = 'stock-low';
-
                             chipsHtml += `
                                 <div class="variant-chip ${statusClass}">
                                     <span class="v-name">${o.name}</span>
-                                    <div class="v-meta">
-                                        <span>$${o.price}</span>
-                                        <span>Stk: ${o.stock}</span>
-                                    </div>
+                                    <div class="v-meta"><span>$${o.price}</span><span>Stk: ${o.stock}</span></div>
                                 </div>
                             `;
                         });
@@ -995,12 +1026,7 @@
                         chipsHtml += '<span style="color:#cbd5e1; font-style:italic; font-size:0.75rem;">Sin variantes</span>';
                     }
                     chipsHtml += '</div>';
-
-                    const inputHtml = `
-                        <div class="variant-editor" style="margin-top:5px;">
-                            <textarea id="prod-options-${p.id}" placeholder="Formato: Nombre:Precio:Stock, ...">${optionsStr}</textarea>
-                        </div>
-                    `;
+                    const inputHtml = `<div class="variant-editor" style="margin-top:5px;"><textarea id="prod-options-${p.id}" placeholder="Formato: Nombre:Precio:Stock, ...">${optionsStr}</textarea></div>`;
                     
                     tbody.innerHTML += `
                         <tr>
@@ -1009,10 +1035,7 @@
                             <td><input type="number" value="${p.price || 0}" id="prod-price-${p.id}" class="table-input"></td>
                             <td><input type="number" value="${p.stock || 0}" id="prod-stock-${p.id}" class="table-input" min="0"></td>
                             <td>${chipsHtml}${inputHtml}</td>
-                            <td>
-                                <button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}', '${key}')"><i class="fas fa-save"></i></button> 
-                                <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_products', '${key}')"><i class="fas fa-trash"></i></button>
-                            </td>
+                            <td><button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}', '${key}')"><i class="fas fa-save"></i></button> <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_products', '${key}')"><i class="fas fa-trash"></i></button></td>
                         </tr>`;
                 }
             }
@@ -1020,7 +1043,7 @@
 
         window.addNewProduct = () => {
             const name = document.getElementById('new-prod-name').value;
-            const manufacturer = document.getElementById('new-prod-manufacturer').value; // Nuevo campo
+            const manufacturer = document.getElementById('new-prod-manufacturer').value;
             const price = document.getElementById('new-prod-price').value;
             const stock = document.getElementById('new-prod-stock').value;
             const icon = document.getElementById('new-prod-icon').value || 'fa-box';
@@ -1052,23 +1075,19 @@
 
         window.updateProduct = async (id, firebaseKey) => {
             if(!firebaseKey) return showToast('Error clave', 'error');
-            
             const snap = await get(ref(db, 'carkkis_products'));
             const products = snap.val();
             const currentProduct = products[firebaseKey];
-            
             if (!currentProduct) return;
 
             const updates = {};
             updates[`carkkis_products/${firebaseKey}/name`] = document.getElementById(`prod-name-${id}`).value;
             updates[`carkkis_products/${firebaseKey}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
             updates[`carkkis_products/${firebaseKey}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
-            // Mantener fabricante existente si no se edita aquí
             if(currentProduct.manufacturer) updates[`carkkis_products/${firebaseKey}/manufacturer`] = currentProduct.manufacturer;
             
             let rawText = document.getElementById(`prod-options-${id}`).value || "";
             let optionsStr = rawText.replace(/\n/g, ',').replace(/,\s*,/g, ',').trim();
-            
             let optionsArr = [];
             if(optionsStr) {
                 const parts = optionsStr.split(',');
@@ -1083,12 +1102,10 @@
                 });
             }
             updates[`carkkis_products/${firebaseKey}/options`] = optionsArr;
-
             await update(ref(db), updates);
             showToast('Producto actualizado', 'success');
         };
 
-        // --- FUNCIONES DE SERVICIOS ---
         window.renderAdminServices = (rawData) => {
             const tbody = document.querySelector('#services-table tbody');
             if(!tbody) return; tbody.innerHTML = '';
@@ -1097,16 +1114,7 @@
                 if (rawData.hasOwnProperty(key)) {
                     const s = rawData[key];
                     const safeId = s.id || key; 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><i class="fas ${s.icon || 'fa-tools'}"></i></td>
-                            <td><input type="text" value="${s.name}" id="serv-name-${safeId}" class="admin-input"></td>
-                            <td><input type="number" value="${s.price || 0}" id="serv-price-${safeId}" class="table-input"></td>
-                            <td>
-                                <button class="btn btn-success btn-sm" onclick="window.updateService('${safeId}', '${key}')"><i class="fas fa-save"></i></button> 
-                                <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_services', '${key}')"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`;
+                    tbody.innerHTML += `<tr><td><i class="fas ${s.icon || 'fa-tools'}"></i></td><td><input type="text" value="${s.name}" id="serv-name-${safeId}" class="admin-input"></td><td><input type="number" value="${s.price || 0}" id="serv-price-${safeId}" class="table-input"></td><td><button class="btn btn-success btn-sm" onclick="window.updateService('${safeId}', '${key}')"><i class="fas fa-save"></i></button> <button class="btn btn-danger btn-sm" onclick="window.deleteItem('carkkis_services', '${key}')"><i class="fas fa-trash"></i></button></td></tr>`;
                 }
             }
         };
@@ -1136,7 +1144,6 @@
                 container.innerHTML += `<div class="product-card" onclick="window.selectService('${s.name}')"><div class="product-img"><i class="fas ${s.icon || 'fa-wrench'} fa-2x"></i></div><h3>${s.name}</h3><span class="product-price">$${(s.price || 0).toLocaleString()}</span></div>`;
             });
         };
-
         window.renderAdminPayments = (rawData) => {
             const tbody = document.querySelector('#payments-table tbody');
             tbody.innerHTML = '';
@@ -1149,7 +1156,6 @@
                 }
             }
         };
-
         window.updatePayment = async (id, key) => {
             if(!key) return;
             const newName = document.getElementById(`pay-name-${id}`).value;
@@ -1161,7 +1167,6 @@
             await update(ref(db), updates);
             showToast('Enlace actualizado', 'success');
         };
-
         window.cleanUndefinedPayments = async () => {
             if(!confirm("¿Eliminar registros vacíos?")) return;
             const snap = await get(ref(db, 'carkkis_payment_links'));
@@ -1178,7 +1183,6 @@
             }
             if (count > 0) { await update(ref(db), updates); showToast(`Eliminados ${count}`, "success"); }
         };
-
         window.addToCart = async (id) => {
             const snap = await get(ref(db, 'carkkis_products'));
             const rawData = snap.val();
@@ -1190,48 +1194,33 @@
                 showToast(`Agregado: ${p.name}`, 'success');
             } else if (p && p.options && p.options.length > 0) {
                 showToast('Por favor selecciona una variante', 'info');
-            } else { 
-                showToast('Agotado', 'error'); 
-            }
+            } else { showToast('Agotado', 'error'); }
         };
-
         window.openCartModal = async () => {
             if (cart.length === 0) return showToast('Carrito vacío', 'info');
             const nameInput = document.getElementById('order-name');
             const phoneInput = document.getElementById('order-phone');
             if (currentUser) { nameInput.value = currentUser.name; phoneInput.value = currentUser.phone; nameInput.disabled = true; phoneInput.disabled = true; } 
             else { nameInput.value = ''; phoneInput.value = ''; nameInput.disabled = false; phoneInput.disabled = false; }
-
             const list = document.getElementById('cart-items-list'); list.innerHTML = ''; let total = 0;
-            cart.forEach(i => { 
-                total += (i.price || 0); 
-                const itemText = i.selectedOption ? `${i.name} <small>(${i.selectedOption})</small>` : i.name;
-                list.innerHTML += `<li><span>${itemText}</span><span>$${(i.price || 0).toLocaleString()}</span></li>`; 
-            });
+            cart.forEach(i => { total += (i.price || 0); const itemText = i.selectedOption ? `${i.name} <small>(${i.selectedOption})</small>` : i.name; list.innerHTML += `<li><span>${itemText}</span><span>$${(i.price || 0).toLocaleString()}</span></li>`; });
             document.getElementById('cart-total-amount').innerText = total.toLocaleString();
-            
             const select = document.getElementById('order-payment');
             select.innerHTML = '<option value="">Seleccione...</option>';
-            if(window.paymentLinks && window.paymentLinks.length > 0) {
-                window.paymentLinks.forEach(p => { select.innerHTML += `<option value="${p.name}">${p.name}</option>`; });
-            }
+            if(window.paymentLinks && window.paymentLinks.length > 0) { window.paymentLinks.forEach(p => { select.innerHTML += `<option value="${p.name}">${p.name}</option>`; }); }
             document.getElementById('order-city').value = ''; document.getElementById('order-address-detail').value = ''; document.getElementById('order-payment').value = '';
             window.openModal('cartModal');
         };
-
         window.confirmPurchase = async () => {
             const clientName = document.getElementById('order-name').value;
             const clientPhone = document.getElementById('order-phone').value;
             const city = document.getElementById('order-city').value;
             const addressDetail = document.getElementById('order-address-detail').value;
             const payment = document.getElementById('order-payment').value;
-
             if(!clientName || !clientPhone || !city || !addressDetail || !payment) return showToast('Todos los campos son obligatorios', 'error');
-
             const productsSnap = await get(ref(db, 'carkkis_products'));
             const products = productsSnap.val();
             const updates = {};
-
             for (const cartItem of cart) {
                 const productKey = Object.keys(products).find(key => products[key].id == cartItem.id);
                 if (productKey) {
@@ -1250,7 +1239,6 @@
                     }
                 }
             }
-
             const total = cart.reduce((s,i) => s + (i.price || 0), 0);
             const newOrderRef = push(ref(db, 'carkkis_orders'));
             const orderId = newOrderRef.key;
@@ -1260,16 +1248,13 @@
             const linkObj = window.paymentLinks.find(l => l.name === payment);
             const paymentUrl = linkObj ? linkObj.url : '#';
             const itemsString = cart.map(i => i.selectedOption ? `${i.name} (${i.selectedOption})` : i.name).join(', ');
-
             const newOrder = { id: orderId, clientName: finalName, clientPhone: finalPhone, items: itemsString, total: total, status: 'Pendiente', dateStr: new Date().toLocaleDateString(), timestamp: Date.now(), address: fullAddress, paymentMethod: payment };
             updates['carkkis_orders/' + orderId] = newOrder;
-
             await update(ref(db), updates);
             if(paymentUrl !== '#') window.open(paymentUrl, '_blank');
             cart = []; document.getElementById('cart-count').innerText = '0'; window.closeModals();
             showToast('Pedido registrado', 'success');
         };
-
         window.submitBooking = async (e) => {
             e.preventDefault();
             const clientName = document.getElementById('book-name').value;
@@ -1279,7 +1264,6 @@
             const issueType = document.getElementById('book-issue').value;
             const dateVal = document.getElementById('book-date').value;
             const timeVal = document.getElementById('book-time').value;
-            
             if(!clientName || !clientPhone) return showToast('Datos requeridos', 'error');
             const d = new Date(`${dateVal}T${timeVal}`);
             const dayOfWeek = d.getDay(); 
@@ -1295,7 +1279,6 @@
             await set(newRef, { id: newRef.key, date: d.toLocaleDateString(), time: timeVal, client: finalName, phone: finalPhone, plate: plate, service: service, issueType: issueType, status: 'Pendiente' });
             window.closeModals(); showToast('Cita agendada', 'success'); e.target.reset();
         };
-
         window.openBookingModal = async () => {
             const nameInput = document.getElementById('book-name'); const phoneInput = document.getElementById('book-phone');
             if (currentUser) { nameInput.value = currentUser.name; phoneInput.value = currentUser.phone; nameInput.disabled = true; phoneInput.disabled = true; } 
@@ -1315,7 +1298,6 @@
             }
             window.openModal('bookingModal');
         };
-
         window.selectService = (name) => { window.openBookingModal(); setTimeout(() => document.getElementById('book-service').value = name, 100); };
         window.handleAuthClick = () => { if(currentUser) { window.logout(); } else { window.openModal('loginModal'); } };
         window.handleLogin = async () => {
@@ -1333,7 +1315,6 @@
             const newRef = push(ref(db, 'carkkis_users')); await set(newRef, { name, phone, email, pass, role: 'client' });
             currentUser = { name, phone, email, pass, role: 'client' }; loginSuccess();
         };
-
         function loginSuccess() {
             window.closeModals(); showToast(`Bienvenido, ${currentUser.name}`, 'success');
             const btn = document.getElementById('auth-btn'); btn.innerText = "Cerrar Sesión"; btn.classList.remove('btn-primary'); btn.classList.add('btn-danger');
@@ -1341,32 +1322,21 @@
             if(currentUser.role === 'admin') {
                 document.getElementById('public-view').classList.add('hidden');
                 document.getElementById('admin-panel').style.display = 'block';
-                // Asegurar que la pestaña correcta se active visualmente
                 window.switchAdminTab('inventory-excel');
             }
         }
-        window.logout = () => {
-            window.showPublicView(); 
-        };
+        window.logout = () => { window.showPublicView(); };
         window.switchAdminTab = (tab) => {
             currentTab = tab;
             document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
-            const tabEl = document.getElementById(`tab-${tab}`); 
-            if(tabEl) tabEl.classList.add('active');
-            
+            const tabEl = document.getElementById(`tab-${tab}`); if(tabEl) tabEl.classList.add('active');
             ['analytics','profits','bookings','sales','payments','services','products','inventory-excel'].forEach(t => {
-                const el = document.getElementById(`view-${t}`);
-                if(el) el.classList.add('hidden');
+                const el = document.getElementById(`view-${t}`); if(el) el.classList.add('hidden');
             });
-            const viewEl = document.getElementById(`view-${tab}`);
-            if(viewEl) viewEl.classList.remove('hidden');
+            const viewEl = document.getElementById(`view-${tab}`); if(viewEl) viewEl.classList.remove('hidden');
             if(tab === 'analytics') loadAnalytics();
         };
-        window.deleteItem = async (path, key) => {
-            if(!confirm('¿Eliminar?')) return;
-            await remove(ref(db, `${path}/${key}`));
-            showToast('Eliminado', 'info');
-        };
+        window.deleteItem = async (path, key) => { if(!confirm('¿Eliminar?')) return; await remove(ref(db, `${path}/${key}`)); showToast('Eliminado', 'info'); };
         window.addNewPayment = () => {
             const name = document.getElementById('new-pay-name').value; const url = document.getElementById('new-pay-link').value;
             if(!name || !url) return showToast('Nombre y URL requeridos', 'error');
