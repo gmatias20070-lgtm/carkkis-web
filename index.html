@@ -22,6 +22,8 @@
             --peligro: #ef4444;
             --advertencia: #f59e0b;
             --wa-green: #25D366;
+            --excel-border: #d1d5db;
+            --excel-header: #f3f4f6;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -123,6 +125,75 @@
         .variant-row input { flex: 1; }
         .remove-variant { color: var(--peligro); cursor: pointer; padding: 5px; }
 
+        /* --- ESTILOS EXCEL INVENTORY --- */
+        .excel-view-container {
+            background: white;
+            border: 1px solid var(--excel-border);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .excel-table th {
+            background-color: var(--excel-header);
+            border: 1px solid var(--excel-border);
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gris-texto);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+        .excel-table td {
+            border: 1px solid var(--excel-border);
+            padding: 4px 8px;
+            vertical-align: top;
+        }
+        /* Input que parece celda de Excel */
+        .excel-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            color: inherit;
+            padding: 4px;
+            outline: none;
+        }
+        .excel-input:focus {
+            background-color: #eef2ff;
+            box-shadow: inset 0 0 0 2px var(--azul-acento);
+        }
+        .excel-number { text-align: right; }
+        
+        /* Mini tabla interna para variantes */
+        .mini-variant-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            background-color: #fafafa;
+        }
+        .mini-variant-table th {
+            background-color: #e5e7eb;
+            border: 1px solid #d1d5db;
+            padding: 2px 4px;
+            font-weight: 600;
+            text-align: left;
+            font-size: 0.7rem;
+        }
+        .mini-variant-table td {
+            border: 1px solid #e5e7eb;
+            padding: 2px 4px;
+        }
+        .mini-stock-low { color: var(--advertencia); font-weight: bold; }
+        .mini-stock-out { color: var(--peligro); font-weight: bold; text-decoration: line-through; }
+        .mini-stock-ok { color: var(--exito); font-weight: bold; }
+
         /* --- MODALES --- */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; position: relative; animation: slideDown 0.3s; max-height: 90vh; overflow-y: auto; }
@@ -158,6 +229,8 @@
             .nav-actions { width: 100%; justify-content: flex-end; margin-top: 10px; }
             .nav-actions button { font-size: 0.8rem; padding: 8px 12px; }
             .variant-chips-container { flex-direction: column; width: 100%; }
+            .excel-table th, .excel-table td { font-size: 0.7rem; padding: 2px 4px; }
+            .mini-variant-table { display: none; } /* Ocultar mini tablas en móvil muy pequeño para no romper */
         }
     </style>
 </head>
@@ -239,14 +312,25 @@
                     <li onclick="window.switchAdminTab('bookings')" id="tab-bookings"><i class="fas fa-calendar-alt"></i> Citas</li>
                     <li onclick="window.switchAdminTab('sales')" id="tab-sales"><i class="fas fa-shopping-bag"></i> Ventas</li>
                     <li onclick="window.switchAdminTab('services')" id="tab-services"><i class="fas fa-wrench"></i> Servicios</li>
-                    <li onclick="window.switchAdminTab('products')" id="tab-products"><i class="fas fa-boxes"></i> Productos</li>
+                    
+                    <!-- SEPARADOR -->
+                    <li style="margin-top: 15px; font-size: 0.8rem; text-transform: uppercase; color: #64748b; cursor: default;">Inventario</li>
+                    
+                    <li onclick="window.switchAdminTab('inventory-excel')" id="tab-inventory-excel" class="active">
+                        <i class="fas fa-table"></i> Inventario Excel
+                    </li>
+                    <li onclick="window.switchAdminTab('products')" id="tab-products"><i class="fas fa-boxes"></i> Gestión Prod.</li>
+                    
                     <li onclick="window.resetDB()" style="color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); margin-top: 10px;"><i class="fas fa-exclamation-triangle"></i> Resetear DB</li>
                     <li onclick="window.logout()" style="margin-top: auto; color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Salir</li>
                 </ul>
             </aside>
             
             <main class="admin-content">
+                <!-- Vista Analítica -->
                 <div id="view-analytics"><h2 style="margin-bottom: 20px;">Analítica de Usuarios</h2><div class="table-container"><table id="analytics-table"><thead><tr><th>Usuario</th><th>Tasa Conversión</th><th>Tiempo Promedio</th></tr></thead><tbody></tbody></table></div></div>
+                
+                <!-- Vista Ganancias -->
                 <div id="view-profits" class="hidden">
                     <h2 style="margin-bottom: 20px;">Ganancias del Mes</h2>
                     <div class="dashboard-cards">
@@ -255,9 +339,14 @@
                     </div>
                     <div class="table-container"><h3>Detalle del Mes</h3><table id="profits-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Monto</th></tr></thead><tbody></tbody></table></div>
                 </div>
+                
+                <!-- Vista Citas -->
                 <div id="view-bookings" class="hidden"><h2 style="margin-bottom: 20px;">Citas Agendadas</h2><div class="table-container"><table id="bookings-table"><thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
+                
+                <!-- Vista Ventas -->
                 <div id="view-sales" class="hidden"><h2 style="margin-bottom: 20px;">Ventas Online</h2><div class="table-container"><table id="sales-table"><thead><tr><th>ID</th><th>Cliente</th><th>Teléfono</th><th>Productos</th><th>Dirección</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table></div></div>
                 
+                <!-- Vista Pagos -->
                 <div id="view-payments" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Enlaces de Pago</h2>
                     <div style="margin-bottom: 15px;">
@@ -276,6 +365,7 @@
                     <div class="table-container"><table id="payments-table"><thead><tr><th>Nombre</th><th>Enlace</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
                 </div>
 
+                <!-- Vista Servicios -->
                 <div id="view-services" class="hidden">
                     <h2 style="margin-bottom: 20px;">Gestión de Servicios</h2>
                     <div class="crud-grid">
@@ -299,14 +389,46 @@
                     </div>
                 </div>
 
-                <!-- GESTIÓN DE PRODUCTOS CON STOCK POR VARIANTE -->
-                <div id="view-products" class="hidden">
-                    <h2 style="margin-bottom: 20px;">Gestión de Inventario</h2>
+                <!-- ================= NUEVA VISTA: INVENTARIO EXCEL ================= -->
+                <div id="view-inventory-excel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                        <h2 style="margin:0;">Inventario Maestro (Estilo Excel)</h2>
+                        <div>
+                            <span style="font-size:0.8rem; color:#64748b; margin-right:10px;">Edición rápida habilitada</span>
+                            <button class="btn btn-sm btn-success" onclick="window.saveAllExcelChanges()"><i class="fas fa-save"></i> Guardar Todo</button>
+                        </div>
+                    </div>
                     
-                    <div class="crud-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr auto;">
+                    <div class="excel-view-container">
+                        <table class="excel-table" id="excel-inventory-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">ID</th>
+                                    <th style="width: 50px;">Img</th>
+                                    <th>Nombre del Producto</th>
+                                    <th style="width: 150px;">Fabricante</th>
+                                    <th style="width: 100px;">Precio Base</th>
+                                    <th style="width: 80px;">Stock Gen.</th>
+                                    <th>Variantes (Detalle)</th>
+                                    <th style="width: 80px;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Filas generadas por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- GESTIÓN DE PRODUCTOS CON STOCK POR VARIANTE (VISTA ORIGINAL) -->
+                <div id="view-products" class="hidden">
+                    <h2 style="margin-bottom: 20px;">Gestión Avanzada de Productos</h2>
+                    
+                    <div class="crud-grid" style="grid-template-columns: 2fr 1.5fr 1fr 1fr 0.5fr auto;">
                         <input type="text" id="new-prod-name" placeholder="Nombre" class="admin-input">
-                        <input type="number" id="new-prod-price" placeholder="Precio Base ($)" class="admin-input">
-                        <input type="number" id="new-prod-stock" placeholder="Stock General" class="admin-input">
+                        <input type="text" id="new-prod-manufacturer" placeholder="Fabricante (ej. Bosch)" class="admin-input">
+                        <input type="number" id="new-prod-price" placeholder="Precio ($)" class="admin-input">
+                        <input type="number" id="new-prod-stock" placeholder="Stock Gen." class="admin-input">
                         <input type="text" id="new-prod-icon" placeholder="Icono" class="admin-input">
                         <button class="btn btn-primary" onclick="window.addNewProduct()">Agregar</button>
                     </div>
@@ -428,11 +550,12 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // --- ACTUALIZACIÓN DE DATOS POR DEFECTO ---
         const defaultData = {
             products: [ 
-                { id: 1, name: "Aceite Sintético 5W-30", price: 85000, icon: "fa-oil-can", stock: 15, options: [] }, 
-                { id: 2, name: "Filtro de Aire", price: 25000, icon: "fa-wind", stock: 0, options: [{name: "FLP-400", price: 25000, stock: 5}, {name: "FLP-500", price: 28000, stock: 2}] }, 
-                { id: 3, name: "Batería 12V", price: 450000, icon: "fa-car-battery", stock: 0, options: [{name: "50AH", price: 450000, stock: 3}, {name: "60AH", price: 500000, stock: 0}, {name: "70AH", price: 550000, stock: 1}] } 
+                { id: 1, name: "Aceite Sintético 5W-30", manufacturer: "Mobil", price: 85000, icon: "fa-oil-can", stock: 15, options: [] }, 
+                { id: 2, name: "Filtro de Aire", manufacturer: "Bosch", price: 25000, icon: "fa-wind", stock: 0, options: [{name: "FLP-400", price: 25000, stock: 5}, {name: "FLP-500", price: 28000, stock: 2}] }, 
+                { id: 3, name: "Batería 12V", manufacturer: "ACDelco", price: 450000, icon: "fa-car-battery", stock: 0, options: [{name: "50AH", price: 450000, stock: 3}, {name: "60AH", price: 500000, stock: 0}, {name: "70AH", price: 550000, stock: 1}] } 
             ],
             services: [ 
                 { id: 1, name: "Alineación y Balanceo", price: 45000, icon: "fa-car-side" }, 
@@ -446,7 +569,7 @@
 
         let cart = [];
         let currentUser = null;
-        let currentTab = 'analytics';
+        let currentTab = 'inventory-excel'; // Iniciamos en la nueva vista
         let pendingProduct = null;
 
         window.showSection = (id) => {
@@ -510,13 +633,11 @@
 
         // ================= FUNCIONES DE RENDERIZADO (ADMIN) =================
         
-        // CORRECCIÓN 1: Función renderAdminBookings
         window.renderAdminBookings = (bookings) => {
             const tbody = document.querySelector('#bookings-table tbody');
             tbody.innerHTML = '';
             if (!Array.isArray(bookings)) return;
 
-            // Ordenar por fecha (más reciente primero)
             bookings.sort((a, b) => b.timestamp - a.timestamp);
 
             bookings.forEach(b => {
@@ -539,18 +660,15 @@
             });
         };
 
-        // CORRECCIÓN 2: Función renderAdminSales
         window.renderAdminSales = (sales) => {
             const tbody = document.querySelector('#sales-table tbody');
             tbody.innerHTML = '';
             if (!Array.isArray(sales)) return;
 
-            // Ordenar por fecha
             sales.sort((a, b) => b.timestamp - a.timestamp);
 
             sales.forEach(s => {
                 const statusClass = s.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
-                // Truncar items si son muy largos
                 const itemsShort = s.items && s.items.length > 40 ? s.items.substring(0, 40) + '...' : (s.items || '-');
                 
                 const row = `
@@ -572,12 +690,140 @@
             });
         };
 
+        // ==========================================
+        // NUEVO: RENDERIZADO INVENTARIO EXCEL
+        // ==========================================
+        window.renderExcelInventory = (rawData) => {
+            const tbody = document.querySelector('#excel-inventory-table tbody');
+            tbody.innerHTML = '';
+            if(!rawData) return;
+            
+            for (let key in rawData) {
+                if (rawData.hasOwnProperty(key)) {
+                    const p = rawData[key];
+                    // Safe defaults for manufacturer
+                    const manufacturer = p.manufacturer || '';
+
+                    // Construcción de la mini-tabla de variantes
+                    let variantsHtml = '<div style="font-size:0.7rem; color:#94a3b8; font-style:italic;">Sin variantes</div>';
+                    if(p.options && Array.isArray(p.options) && p.options.length > 0) {
+                        variantsHtml = `
+                            <table class="mini-variant-table">
+                                <thead>
+                                    <tr>
+                                        <th>Variante</th>
+                                        <th>Precio</th>
+                                        <th>Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        p.options.forEach((opt, idx) => {
+                            // Clases para stock
+                            let stockClass = 'mini-stock-ok';
+                            if(opt.stock === 0) stockClass = 'mini-stock-out';
+                            else if(opt.stock < 5) stockClass = 'mini-stock-low';
+
+                            variantsHtml += `
+                                <tr>
+                                    <td>${opt.name}</td>
+                                    <td>$${opt.price.toLocaleString()}</td>
+                                    <td class="${stockClass}">${opt.stock}</td>
+                                </tr>
+                            `;
+                        });
+                        variantsHtml += `</tbody></table>`;
+                    }
+
+                    const row = `
+                        <tr>
+                            <td style="text-align:center;">${p.id}</td>
+                            <td style="text-align:center;"><i class="fas ${p.icon}"></i></td>
+                            <td>
+                                <input type="text" class="excel-input" value="${p.name}" id="excel-name-${p.id}" data-key="${key}">
+                            </td>
+                            <td>
+                                <input type="text" class="excel-input" value="${manufacturer}" id="excel-manufacturer-${p.id}" data-key="${key}" placeholder="Fabricante...">
+                            </td>
+                            <td>
+                                <input type="number" class="excel-input excel-number" value="${p.price || 0}" id="excel-price-${p.id}" data-key="${key}">
+                            </td>
+                            <td>
+                                <input type="number" class="excel-input excel-number" value="${p.stock || 0}" id="excel-stock-${p.id}" data-key="${key}">
+                            </td>
+                            <td>
+                                ${variantsHtml}
+                            </td>
+                            <td style="text-align:center;">
+                                <button class="btn btn-sm btn-success" onclick="window.saveExcelRow('${p.id}', '${key}')" title="Guardar fila"><i class="fas fa-check"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                }
+            }
+        };
+
+        // Guardar una fila específica del Excel
+        window.saveExcelRow = async (id, firebaseKey) => {
+            if(!firebaseKey) return showToast('Error clave', 'error');
+            
+            const updates = {};
+            // Obtener valores de los inputs excel
+            updates[`carkkis_products/${firebaseKey}/name`] = document.getElementById(`excel-name-${id}`).value;
+            updates[`carkkis_products/${firebaseKey}/manufacturer`] = document.getElementById(`excel-manufacturer-${id}`).value;
+            updates[`carkkis_products/${firebaseKey}/price`] = parseInt(document.getElementById(`excel-price-${id}`).value);
+            updates[`carkkis_products/${firebaseKey}/stock`] = parseInt(document.getElementById(`excel-stock-${id}`).value);
+
+            try {
+                await update(ref(db), updates);
+                showToast('Fila actualizada', 'success');
+            } catch(e) {
+                showToast('Error al guardar', 'error');
+            }
+        };
+        
+        // Guardar todos los cambios (Opcional, pero útil para UX)
+        window.saveAllExcelChanges = async () => {
+            if(!confirm("¿Guardar todos los cambios visibles en la tabla?")) return;
+            
+            const inputs = document.querySelectorAll('#excel-inventory-table input');
+            if(inputs.length === 0) return;
+
+            const updates = {};
+            let count = 0;
+
+            inputs.forEach(input => {
+                const key = input.getAttribute('data-key');
+                const field = input.id.split('-')[1]; // name, manufacturer, price, stock
+                let val = input.value;
+
+                if(field === 'price' || field === 'stock') val = parseInt(val);
+
+                if(key && field) {
+                    updates[`carkkis_products/${key}/${field}`] = val;
+                    count++;
+                }
+            });
+
+            if(count > 0) {
+                try {
+                    await update(ref(db), updates);
+                    showToast(`${count} campos actualizados`, 'success');
+                } catch(e) {
+                    showToast('Error masivo', 'error');
+                }
+            }
+        };
+        // ==========================================
+
         function setupListeners() {
             onValue(ref(db, 'carkkis_products'), (snap) => {
                 const rawData = snap.val();
                 const data = rawData ? Object.values(rawData) : [];
                 window.renderPublicStore(data);
                 window.renderAdminProducts(rawData);
+                window.renderExcelInventory(rawData); // Renderizar la nueva vista
             });
             onValue(ref(db, 'carkkis_services'), (snap) => {
                 const rawData = snap.val();
@@ -602,7 +848,7 @@
             });
         }
 
-        // --- AGREGAR FILA DE VARIANTE AHORA CON STOCK ---
+        // --- AGREGAR FILA DE VARIANTE ---
         window.addVariantRow = (name = '', price = '', stock = '') => {
             const container = document.getElementById('variants-list');
             const div = document.createElement('div');
@@ -625,13 +871,10 @@
                 let displayPrice = p.price;
                 let availableOptions = [];
                 
-                // Lógica de Stock para Variantes
                 const hasOptions = p.options && p.options.length > 0;
                 
                 if (hasOptions) {
-                    // Filtrar opciones que tengan stock
                     availableOptions = p.options.filter(o => o.stock > 0);
-                    
                     if (availableOptions.length === 0) {
                         badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock';
                     } else {
@@ -642,14 +885,12 @@
                         stockText = `${availableOptions.length} Tipos disponibles`;
                     }
                 } else {
-                    // Producto sin variantes
                     displayPrice = `$${(p.price || 0).toLocaleString()}`;
                     if (p.stock === 0) { badgeClass = 'bg-red'; stockText = 'Agotado'; cardClass = 'out-of-stock'; } 
                     else if (p.stock < 5) { badgeClass = 'bg-yellow'; stockText = `Últimos (${p.stock})`; }
                 }
 
                 let btn = '';
-                
                 if (cardClass === 'out-of-stock') {
                      btn = `<button class="btn btn-outline btn-sm" disabled>Agotado</button>`;
                 } else {
@@ -680,7 +921,6 @@
             
             if(p.options && Array.isArray(p.options)) {
                 p.options.forEach(opt => {
-                    // Solo mostrar opciones con stock > 0
                     if(opt.stock > 0) {
                         select.innerHTML += `<option value="${opt.name}">${opt.name} - $${opt.price.toLocaleString()} (${opt.stock} disp.)</option>`;
                     }
@@ -718,7 +958,7 @@
             window.closeModals();
         };
 
-        // --- FUNCIÓN MEJORADA DE RENDERIZADO DE PRODUCTOS ADMIN ---
+        // --- FUNCIÓN MEJORADA DE RENDERIZADO DE PRODUCTOS ADMIN (VISTA ORIGINAL) ---
         window.renderAdminProducts = (rawData) => {
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
@@ -728,18 +968,14 @@
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
                     
-                    // Generamos el string plano para edición
                     const optionsStr = (p.options && Array.isArray(p.options)) 
                         ? p.options.map(o => `${o.name}:${o.price}:${o.stock}`).join(', ') 
                         : '';
 
-                    // --- VISUALIZACIÓN DE TARJETAS (CHIPS) ---
                     let chipsHtml = '<div class="variant-visual-wrapper">';
-                    
                     if (p.options && Array.isArray(p.options) && p.options.length > 0) {
                         chipsHtml += '<div class="variant-chips-container">';
                         p.options.forEach(o => {
-                            // Determinar clase según stock
                             let statusClass = 'stock-ok';
                             if(o.stock === 0) statusClass = 'stock-out';
                             else if(o.stock < 5) statusClass = 'stock-low';
@@ -759,12 +995,10 @@
                         chipsHtml += '<span style="color:#cbd5e1; font-style:italic; font-size:0.75rem;">Sin variantes</span>';
                     }
                     chipsHtml += '</div>';
-                    // ----------------------------------------------
 
-                    // Input de edición (Textarea para mejor manejo)
                     const inputHtml = `
                         <div class="variant-editor" style="margin-top:5px;">
-                            <textarea id="prod-options-${p.id}" placeholder="Formato: Nombre:Precio:Stock, Nombre2:Precio2:Stock2">${optionsStr}</textarea>
+                            <textarea id="prod-options-${p.id}" placeholder="Formato: Nombre:Precio:Stock, ...">${optionsStr}</textarea>
                         </div>
                     `;
                     
@@ -774,7 +1008,6 @@
                             <td><input type="text" value="${p.name}" id="prod-name-${p.id}" class="admin-input"></td>
                             <td><input type="number" value="${p.price || 0}" id="prod-price-${p.id}" class="table-input"></td>
                             <td><input type="number" value="${p.stock || 0}" id="prod-stock-${p.id}" class="table-input" min="0"></td>
-                            <!-- Inyectamos tarjetas visuales y editor -->
                             <td>${chipsHtml}${inputHtml}</td>
                             <td>
                                 <button class="btn btn-success btn-sm" onclick="window.updateProduct('${p.id}', '${key}')"><i class="fas fa-save"></i></button> 
@@ -787,6 +1020,7 @@
 
         window.addNewProduct = () => {
             const name = document.getElementById('new-prod-name').value;
+            const manufacturer = document.getElementById('new-prod-manufacturer').value; // Nuevo campo
             const price = document.getElementById('new-prod-price').value;
             const stock = document.getElementById('new-prod-stock').value;
             const icon = document.getElementById('new-prod-icon').value || 'fa-box';
@@ -805,17 +1039,17 @@
             });
             
             const newRef = push(ref(db, 'carkkis_products'));
-            set(newRef, { id: Date.now(), name, price: parseInt(price), stock: parseInt(stock || 10), icon, options: optionsArr });
+            set(newRef, { id: Date.now(), name, manufacturer, price: parseInt(price), stock: parseInt(stock || 10), icon, options: optionsArr });
             
             showToast('Producto agregado', 'success');
             document.getElementById('new-prod-name').value = ''; 
+            document.getElementById('new-prod-manufacturer').value = ''; 
             document.getElementById('new-prod-price').value = ''; 
             document.getElementById('new-prod-stock').value = ''; 
             document.getElementById('new-prod-icon').value = '';
             document.getElementById('variants-list').innerHTML = '';
         };
 
-        // --- FUNCIÓN ACTUALIZADA PARA LEER DEL TEXTAREA ---
         window.updateProduct = async (id, firebaseKey) => {
             if(!firebaseKey) return showToast('Error clave', 'error');
             
@@ -829,10 +1063,10 @@
             updates[`carkkis_products/${firebaseKey}/name`] = document.getElementById(`prod-name-${id}`).value;
             updates[`carkkis_products/${firebaseKey}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
             updates[`carkkis_products/${firebaseKey}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
+            // Mantener fabricante existente si no se edita aquí
+            if(currentProduct.manufacturer) updates[`carkkis_products/${firebaseKey}/manufacturer`] = currentProduct.manufacturer;
             
-            // Leer del textarea y limpiar saltos de línea por comas
             let rawText = document.getElementById(`prod-options-${id}`).value || "";
-            // Reemplaza saltos de línea por comas y limpia espacios dobles
             let optionsStr = rawText.replace(/\n/g, ',').replace(/,\s*,/g, ',').trim();
             
             let optionsArr = [];
@@ -902,7 +1136,6 @@
                 container.innerHTML += `<div class="product-card" onclick="window.selectService('${s.name}')"><div class="product-img"><i class="fas ${s.icon || 'fa-wrench'} fa-2x"></i></div><h3>${s.name}</h3><span class="product-price">$${(s.price || 0).toLocaleString()}</span></div>`;
             });
         };
-        // --- FIN SERVICIOS ---
 
         window.renderAdminPayments = (rawData) => {
             const tbody = document.querySelector('#payments-table tbody');
@@ -951,7 +1184,6 @@
             const rawData = snap.val();
             const products = rawData ? Object.values(rawData) : [];
             const p = products.find(x => x.id == id);
-            // Solo productos sin variantes usan esta función
             if (p && (!p.options || p.options.length === 0) && p.stock > 0) {
                 cart.push(p);
                 document.getElementById('cart-count').innerText = cart.length;
@@ -1002,10 +1234,8 @@
 
             for (const cartItem of cart) {
                 const productKey = Object.keys(products).find(key => products[key].id == cartItem.id);
-                
                 if (productKey) {
                     const product = products[productKey];
-                    
                     if (cartItem.selectedOption) {
                         const optionIndex = product.options.findIndex(o => o.name === cartItem.selectedOption);
                         if (optionIndex > -1 && product.options[optionIndex].stock > 0) {
@@ -1111,7 +1341,8 @@
             if(currentUser.role === 'admin') {
                 document.getElementById('public-view').classList.add('hidden');
                 document.getElementById('admin-panel').style.display = 'block';
-                loadAnalytics();
+                // Asegurar que la pestaña correcta se active visualmente
+                window.switchAdminTab('inventory-excel');
             }
         }
         window.logout = () => {
@@ -1120,8 +1351,10 @@
         window.switchAdminTab = (tab) => {
             currentTab = tab;
             document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
-            const tabEl = document.getElementById(`tab-${tab}`); if(tabEl) tabEl.classList.add('active');
-            ['analytics','profits','bookings','sales','payments','services','products'].forEach(t => {
+            const tabEl = document.getElementById(`tab-${tab}`); 
+            if(tabEl) tabEl.classList.add('active');
+            
+            ['analytics','profits','bookings','sales','payments','services','products','inventory-excel'].forEach(t => {
                 const el = document.getElementById(`view-${t}`);
                 if(el) el.classList.add('hidden');
             });
