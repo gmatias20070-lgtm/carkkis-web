@@ -71,6 +71,37 @@
 
         /* --- TIENDA --- */
         .shop-preview { background-color: var(--gris-fondo); }
+        
+        /* Estilos para el Buscador Cliente */
+        .store-search-container {
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+            position: relative;
+        }
+        .store-search-input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            border: 2px solid #e2e8f0;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .store-search-input:focus {
+            outline: none;
+            border-color: var(--azul-acento);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        .store-search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 30px; }
         .product-card { background: var(--blanco); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; transition: 0.3s; border: 1px solid #e2e8f0; position: relative; }
         .product-card:hover { transform: translateY(-5px); border-color: var(--azul-acento); }
@@ -233,6 +264,35 @@
         .modal-input:disabled { background-color: #f1f5f9; cursor: not-allowed; color: #64748b; }
         .note-warning { background-color: #fffbeb; border-left: 4px solid var(--advertencia); padding: 10px; font-size: 0.85rem; color: #92400e; margin-bottom: 15px; border-radius: 4px; }
 
+        /* Estilos para la Lista de Opciones en el Modal */
+        .option-list-container {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            background-color: #f8fafc;
+        }
+        .option-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .option-item:last-child { border-bottom: none; }
+        .option-item:hover { background-color: #eef2ff; }
+        .option-item.selected {
+            background-color: var(--azul-acento);
+            color: white;
+            border-color: var(--azul-acento);
+        }
+        .option-item .opt-name { font-weight: 600; font-size: 0.95rem; }
+        .option-item .opt-price { font-size: 0.85rem; opacity: 0.9; }
+        .option-item.selected .opt-price { color: #e0f2fe; }
+
         /* Carrito */
         #cart-items-list { border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-bottom: 15px; max-height: 150px; overflow-y: auto; background: #f8fafc; }
         #cart-items-list li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #e2e8f0; font-size: 0.9rem; }
@@ -260,6 +320,8 @@
             .excel-table th, .excel-table td { font-size: 0.7rem; padding: 2px 4px; }
             .excel-variant-row { grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 6px; }
             .excel-variant-input { width: 100%; }
+            /* Ajuste buscador admin movil */
+            #admin-search-excel { width: 100%; margin-bottom: 10px; }
         }
     </style>
 </head>
@@ -313,6 +375,13 @@
         <section id="store" class="shop-preview hidden">
             <div class="container">
                 <h2 class="section-title">Catálogo de Repuestos</h2>
+                
+                <!-- BUSCADOR DE CLIENTE -->
+                <div class="store-search-container">
+                    <i class="fas fa-search store-search-icon"></i>
+                    <input type="text" id="client-search" class="store-search-input" placeholder="Buscar productos, filtros o variantes (ej: Filtro Mobil)...">
+                </div>
+
                 <div id="products-container" class="products-grid"></div>
             </div>
         </section>
@@ -361,12 +430,12 @@
                 
                 <!-- Vista Ganancias -->
                 <div id="view-profits" class="hidden">
-                    <h2 style="margin-bottom: 20px;">Ganancias del Mes</h2>
+                    <h2 style="margin-bottom: 20px;">Ganancias del Mes (Ventas + Citas)</h2>
                     <div class="dashboard-cards">
                         <div class="stat-card"><div class="stat-number" id="monthly-profit" style="color: var(--exito);">$0</div><div class="stat-label">Ingresos Totales</div></div>
-                        <div class="stat-card"><div class="stat-number" id="monthly-orders">0</div><div class="stat-label">Pedidos del Mes</div></div>
+                        <div class="stat-card"><div class="stat-number" id="monthly-transactions">0</div><div class="stat-label">Transacciones (Ventas+Citas)</div></div>
                     </div>
-                    <div class="table-container"><h3>Detalle del Mes</h3><table id="profits-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Monto</th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-container"><h3>Detalle del Mes</h3><table id="profits-table"><thead><tr><th>Tipo</th><th>Fecha</th><th>Cliente</th><th>Estado</th><th>Monto</th></tr></thead><tbody></tbody></table></div>
                 </div>
                 
                 <!-- Vista Citas -->
@@ -420,10 +489,17 @@
 
                 <!-- ================= VISTA: INVENTARIO EXCEL (EDITABLE) ================= -->
                 <div id="view-inventory-excel">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                         <h2 style="margin:0;">Inventario Maestro (Estilo Excel)</h2>
-                        <div>
-                            <span style="font-size:0.8rem; color:#64748b; margin-right:10px;">Las variantes también se editan aquí</span>
+                        
+                        <div style="display:flex; align-items:center; gap: 10px; flex:1; justify-content:flex-end;">
+                            <!-- BUSCADOR DE ADMIN -->
+                            <div style="position:relative; width: 250px;">
+                                <i class="fas fa-search" style="position: absolute; left: 10px; top: 10px; color: #94a3b8; font-size: 0.9rem;"></i>
+                                <input type="text" id="admin-search-excel" class="admin-input" style="padding-left: 35px; height: 38px;" placeholder="Buscar producto...">
+                            </div>
+
+                            <span style="font-size:0.8rem; color:#64748b; display: none; @media(min-width: 768px){display:inline;}">Las variantes también se editan aquí</span>
                             <button class="btn btn-sm btn-success" onclick="window.saveAllExcelChanges()"><i class="fas fa-save"></i> Guardar Todo</button>
                         </div>
                     </div>
@@ -513,15 +589,26 @@
         </div>
     </div>
 
+    <!-- MODAL DE SELECCIÓN DE OPCIÓN CON BÚSQUEDA -->
     <div id="optionModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="window.closeModals()">&times;</span>
             <h2 style="text-align:center; margin-bottom: 20px;">Seleccionar Modelo</h2>
-            <p style="text-align:center; margin-bottom: 15px; color: var(--gris-texto);" id="option-product-name"></p>
+            <p style="text-align:center; margin-bottom: 15px; color: var(--gris-texto); font-weight: 600;" id="option-product-name"></p>
+            
+            <!-- Input de búsqueda dentro del modal -->
             <div class="form-group">
-                <label>Elige la opción específica:</label>
-                <select id="product-option-select" class="modal-input"></select>
+                <input type="text" id="modal-option-search" class="modal-input" placeholder="Buscar variante (ej: Mobil, SUP 1000)...">
             </div>
+
+            <div class="form-group">
+                <label style="font-size: 0.85rem; color: #64748b;">Resultados:</label>
+                <!-- Lista personalizada en lugar de Select -->
+                <div id="product-option-list" class="option-list-container">
+                    <!-- Opciones generadas por JS -->
+                </div>
+            </div>
+            
             <button class="btn btn-primary" style="width:100%" onclick="window.confirmOptionSelection()">Añadir al Carrito</button>
         </div>
     </div>
@@ -582,7 +669,7 @@
         const defaultData = {
             products: [ 
                 { id: 1, name: "Aceite Sintético 5W-30", manufacturer: "Mobil", price: 85000, icon: "fa-oil-can", stock: 15, options: [] }, 
-                { id: 2, name: "Filtro de Aire", manufacturer: "Bosch", price: 25000, icon: "fa-wind", stock: 0, options: [{name: "FLP-400", price: 25000, stock: 5}, {name: "FLP-500", price: 28000, stock: 2}] }, 
+                { id: 2, name: "Filtro de Aire", manufacturer: "Bosch", price: 25000, icon: "fa-wind", stock: 0, options: [{name: "FLP-400", price: 25000, stock: 5}, {name: "Mobil SUP 1000", price: 32000, stock: 8}, {name: "FLP-500", price: 28000, stock: 2}] }, 
                 { id: 3, name: "Batería 12V", manufacturer: "ACDelco", price: 450000, icon: "fa-car-battery", stock: 0, options: [{name: "50AH", price: 450000, stock: 3}, {name: "60AH", price: 500000, stock: 0}, {name: "70AH", price: 550000, stock: 1}] } 
             ],
             services: [ 
@@ -599,6 +686,16 @@
         let currentUser = null;
         let currentTab = 'inventory-excel';
         let pendingProduct = null;
+        let selectedVariantObject = null; // Para guardar la selección del modal customizado
+
+        // Variables globales para caché de búsqueda y datos
+        let allPublicProductsCache = [];
+        let allAdminRawCache = {};
+        
+        // Variables para vincular Citas con Ganancias
+        let allOrdersCache = []; // Ventas online
+        let allBookingsCache = []; // Citas
+        let allServicesCache = []; // Precios de servicios
 
         window.showSection = (id) => {
             const home = document.getElementById('home');
@@ -613,6 +710,11 @@
             if(target) {
                 target.classList.remove('hidden');
                 window.scrollTo(0,0);
+                
+                // Si entramos a la tienda, aseguramos que se muestre todo (limpiamos búsqueda previa si se desea)
+                if(id === 'store' && document.getElementById('client-search').value === '') {
+                    window.renderPublicStore(allPublicProductsCache);
+                }
             }
         };
 
@@ -658,6 +760,36 @@
             } catch (e) { console.error("Error DB:", e); }
         }
 
+        // ================= FUNCIONES DE BÚSQUEDA =================
+        
+        window.filterClientProducts = () => {
+            const term = document.getElementById('client-search').value.toLowerCase();
+            const filtered = allPublicProductsCache.filter(p => {
+                const inName = p.name.toLowerCase().includes(term);
+                const inMan = p.manufacturer && p.manufacturer.toLowerCase().includes(term);
+                const inOpts = p.options && p.options.some(o => o.name.toLowerCase().includes(term));
+                return inName || inMan || inOpts;
+            });
+            window.renderPublicStore(filtered);
+        };
+
+        window.filterAdminInventory = () => {
+            const term = document.getElementById('admin-search-excel').value.toLowerCase();
+            const filteredRaw = {};
+            for (const key in allAdminRawCache) {
+                if (allAdminRawCache.hasOwnProperty(key)) {
+                    const p = allAdminRawCache[key];
+                    const inName = p.name.toLowerCase().includes(term);
+                    const inMan = p.manufacturer && p.manufacturer.toLowerCase().includes(term);
+                    const inOpts = p.options && p.options.some(o => o.name.toLowerCase().includes(term));
+                    if (inName || inMan || inOpts) {
+                        filteredRaw[key] = p;
+                    }
+                }
+            }
+            window.renderExcelInventory(filteredRaw);
+        };
+
         // ================= FUNCIONES DE RENDERIZADO (ADMIN) =================
         
         window.renderAdminBookings = (bookings) => {
@@ -684,19 +816,16 @@
         };
 
         // ==========================================
-        // NUEVO: RENDERIZADO INVENTARIO EXCEL (EDITABLE)
+        // RENDERIZADO INVENTARIO EXCEL (EDITABLE)
         // ==========================================
         window.renderExcelInventory = (rawData) => {
             const tbody = document.querySelector('#excel-inventory-table tbody');
             tbody.innerHTML = '';
             if(!rawData) return;
-            
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
                     const manufacturer = p.manufacturer || '';
-
-                    // Generar filas de variantes editables
                     let variantsHtml = '';
                     if(p.options && Array.isArray(p.options) && p.options.length > 0) {
                         p.options.forEach(opt => {
@@ -712,27 +841,16 @@
                     } else {
                         variantsHtml = `<div style="font-size:0.7rem; color:#9ca3af; text-align:center; padding:4px; font-style:italic;">Sin variantes</div>`;
                     }
-
                     const row = `
                         <tr>
                             <td style="text-align:center;">${p.id}</td>
                             <td style="text-align:center;"><i class="fas ${p.icon}"></i></td>
+                            <td><input type="text" class="excel-input" value="${p.name}" id="excel-name-${p.id}" data-key="${key}"></td>
+                            <td><input type="text" class="excel-input" value="${manufacturer}" id="excel-manufacturer-${p.id}" data-key="${key}" placeholder="Fabricante..."></td>
+                            <td><input type="number" class="excel-input excel-number" value="${p.price || 0}" id="excel-price-${p.id}" data-key="${key}"></td>
+                            <td><input type="number" class="excel-input excel-number" value="${p.stock || 0}" id="excel-stock-${p.id}" data-key="${key}"></td>
                             <td>
-                                <input type="text" class="excel-input" value="${p.name}" id="excel-name-${p.id}" data-key="${key}">
-                            </td>
-                            <td>
-                                <input type="text" class="excel-input" value="${manufacturer}" id="excel-manufacturer-${p.id}" data-key="${key}" placeholder="Fabricante...">
-                            </td>
-                            <td>
-                                <input type="number" class="excel-input excel-number" value="${p.price || 0}" id="excel-price-${p.id}" data-key="${key}">
-                            </td>
-                            <td>
-                                <input type="number" class="excel-input excel-number" value="${p.stock || 0}" id="excel-stock-${p.id}" data-key="${key}">
-                            </td>
-                            <td>
-                                <div class="excel-variants-wrapper" id="excel-variants-${p.id}">
-                                    ${variantsHtml}
-                                </div>
+                                <div class="excel-variants-wrapper" id="excel-variants-${p.id}">${variantsHtml}</div>
                                 <button class="btn-add-variant-excel" onclick="window.addExcelVariantRow(${p.id})">+ Agregar Variante</button>
                             </td>
                             <td style="text-align:center;">
@@ -745,15 +863,11 @@
             }
         };
 
-        // Función para agregar fila de variante en el Excel
         window.addExcelVariantRow = (productId) => {
             const container = document.getElementById(`excel-variants-${productId}`);
             if(!container) return;
-
-            // Remover el mensaje "Sin variantes" si existe
             const placeholder = container.querySelector('div[style*="font-style:italic"]');
             if(placeholder) placeholder.remove();
-
             const div = document.createElement('div');
             div.className = 'excel-variant-row';
             div.innerHTML = `
@@ -763,134 +877,119 @@
                 <button class="btn-remove-excel-var" onclick="this.parentElement.remove()" title="Eliminar variante"><i class="fas fa-times"></i></button>
             `;
             container.appendChild(div);
-            
-            // Enfocar el primer input
             div.querySelector('.var-name').focus();
         };
 
-        // Guardar una fila específica del Excel (INCLUYENDO VARIANTES)
         window.saveExcelRow = async (id, firebaseKey) => {
             if(!firebaseKey) return showToast('Error clave', 'error');
-            
             const updates = {};
-            
-            // 1. Guardar datos principales
             updates[`carkkis_products/${firebaseKey}/name`] = document.getElementById(`excel-name-${id}`).value;
             updates[`carkkis_products/${firebaseKey}/manufacturer`] = document.getElementById(`excel-manufacturer-${id}`).value;
             updates[`carkkis_products/${firebaseKey}/price`] = parseInt(document.getElementById(`excel-price-${id}`).value);
             updates[`carkkis_products/${firebaseKey}/stock`] = parseInt(document.getElementById(`excel-stock-${id}`).value);
 
-            // 2. Guardar variantes desde el DOM
             const variantContainer = document.getElementById(`excel-variants-${id}`);
             const variantRows = variantContainer.querySelectorAll('.excel-variant-row');
             const optionsArr = [];
-
             variantRows.forEach(row => {
                 const name = row.querySelector('.var-name').value.trim();
                 const price = row.querySelector('.var-price').value;
                 const stock = row.querySelector('.var-stock').value;
-
-                // Solo agregar si tiene nombre y precio
                 if(name) {
-                    optionsArr.push({
-                        name: name,
-                        price: parseInt(price) || 0,
-                        stock: parseInt(stock) || 0
-                    });
+                    optionsArr.push({ name: name, price: parseInt(price) || 0, stock: parseInt(stock) || 0 });
                 }
             });
-
             updates[`carkkis_products/${firebaseKey}/options`] = optionsArr;
-
             try {
                 await update(ref(db), updates);
                 showToast('Fila y variantes guardadas', 'success');
-            } catch(e) {
-                showToast('Error al guardar', 'error');
-            }
+            } catch(e) { showToast('Error al guardar', 'error'); }
         };
         
-        // Guardar todos los cambios (Recorriendo variantes también)
         window.saveAllExcelChanges = async () => {
             if(!confirm("¿Guardar todos los cambios visibles (incluyendo variantes)?")) return;
-            
             const tableRows = document.querySelectorAll('#excel-inventory-table tbody tr');
             if(tableRows.length === 0) return;
-
             const updates = {};
             let count = 0;
-
             tableRows.forEach(tr => {
-                // Encontrar el ID del producto en esta fila
                 const mainNameInput = tr.querySelector('input[id^="excel-name-"]');
                 if(!mainNameInput) return;
-                
                 const prodId = mainNameInput.id.replace('excel-name-', '');
                 const key = mainNameInput.getAttribute('data-key');
-
-                // Datos principales
                 updates[`carkkis_products/${key}/name`] = mainNameInput.value;
                 updates[`carkkis_products/${key}/manufacturer`] = tr.querySelector(`#excel-manufacturer-${prodId}`).value;
                 updates[`carkkis_products/${key}/price`] = parseInt(tr.querySelector(`#excel-price-${prodId}`).value);
                 updates[`carkkis_products/${key}/stock`] = parseInt(tr.querySelector(`#excel-stock-${prodId}`).value);
 
-                // Datos de variantes
                 const variantContainer = document.getElementById(`excel-variants-${prodId}`);
                 const variantRows = variantContainer.querySelectorAll('.excel-variant-row');
                 const optionsArr = [];
-
                 variantRows.forEach(row => {
                     const name = row.querySelector('.var-name').value.trim();
                     const price = row.querySelector('.var-price').value;
                     const stock = row.querySelector('.var-stock').value;
                     if(name) {
-                        optionsArr.push({
-                            name: name,
-                            price: parseInt(price) || 0,
-                            stock: parseInt(stock) || 0
-                        });
+                        optionsArr.push({ name: name, price: parseInt(price) || 0, stock: parseInt(stock) || 0 });
                     }
                 });
                 updates[`carkkis_products/${key}/options`] = optionsArr;
-                
                 count++;
             });
-
             if(count > 0) {
                 try {
                     await update(ref(db), updates);
                     showToast(`${count} productos y sus variantes actualizados`, 'success');
-                } catch(e) {
-                    showToast('Error masivo', 'error');
-                }
+                } catch(e) { showToast('Error masivo', 'error'); }
             }
         };
-        // ==========================================
 
+        // ==========================================
+        // SETUP LISTENERS & DATA INTEGRATION
+        // ==========================================
         function setupListeners() {
+            // PRODUCTOS
             onValue(ref(db, 'carkkis_products'), (snap) => {
                 const rawData = snap.val();
                 const data = rawData ? Object.values(rawData) : [];
+                allPublicProductsCache = data;
+                allAdminRawCache = rawData || {};
                 window.renderPublicStore(data);
                 window.renderAdminProducts(rawData);
                 window.renderExcelInventory(rawData); 
             });
+
+            // SERVICIOS
             onValue(ref(db, 'carkkis_services'), (snap) => {
                 const rawData = snap.val();
                 const data = rawData ? Object.values(rawData) : [];
+                allServicesCache = data; // Guardar en caché global para Ganancias
                 window.renderPublicServices(data);
                 window.renderAdminServices(rawData);
+                // Actualizar ganancias por si cambian los precios de servicios
+                loadProfits(allOrdersCache, allBookingsCache);
             });
+
+            // BOOKINGS (CITAS)
             onValue(ref(db, 'carkkis_bookings'), (snap) => {
                 const data = snap.val() ? Object.values(snap.val()) : [];
+                allBookingsCache = data; // Guardar en caché global
                 window.renderAdminBookings(data);
                 if(currentTab === 'analytics') loadAnalytics();
+                // ACTUALIZAR GANANCIAS (CITAS)
+                loadProfits(allOrdersCache, allBookingsCache);
             });
+
+            // ORDERS (VENTAS)
             onValue(ref(db, 'carkkis_orders'), (snap) => {
                 const data = snap.val() ? Object.values(snap.val()) : [];
+                allOrdersCache = data; // Guardar en caché global
                 window.renderAdminSales(data);
-                loadProfits(data);
+                // ACTUALIZAR GANANCIAS (VENTAS)
+                loadProfits(allOrdersCache, allBookingsCache);
             });
+
+            // PAYMENTS
             onValue(ref(db, 'carkkis_payment_links'), (snap) => {
                 const rawData = snap.val();
                 window.paymentLinks = rawData ? Object.values(rawData) : [];
@@ -915,6 +1014,10 @@
             const container = document.getElementById('products-container');
             container.innerHTML = '';
             if(!Array.isArray(products)) return;
+            if(products.length === 0) {
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color: #64748b;">No se encontraron productos con ese criterio.</div>`;
+                return;
+            }
             products.forEach(p => {
                 let badgeClass = 'bg-green', stockText = `Stock: ${p.stock}`, cardClass = '';
                 let displayPrice = p.price;
@@ -958,41 +1061,66 @@
             const rawData = snap.val();
             const products = rawData ? Object.values(rawData) : [];
             const p = products.find(x => x.id == id);
-            
             if (!p) return;
             pendingProduct = p;
+            selectedVariantObject = null;
             document.getElementById('option-product-name').innerText = `Modelos disponibles para: ${p.name}`;
-            const select = document.getElementById('product-option-select');
-            select.innerHTML = '';
-            
-            if(p.options && Array.isArray(p.options)) {
-                p.options.forEach(opt => {
-                    if(opt.stock > 0) {
-                        select.innerHTML += `<option value="${opt.name}">${opt.name} - $${opt.price.toLocaleString()} (${opt.stock} disp.)</option>`;
-                    }
-                });
-            }
-            if(select.innerHTML === '') select.innerHTML = '<option value="">Sin stock disponible</option>';
+            window.renderOptionList(p.options);
+            document.getElementById('modal-option-search').value = '';
             window.openModal('optionModal');
         };
 
+        window.renderOptionList = (options) => {
+            const container = document.getElementById('product-option-list');
+            container.innerHTML = '';
+            if(!options || options.length === 0) {
+                container.innerHTML = '<div style="padding:15px; text-align:center; color:#64748b;">No hay variantes disponibles.</div>';
+                return;
+            }
+            options.forEach(opt => {
+                if(opt.stock > 0) {
+                    const div = document.createElement('div');
+                    div.className = 'option-item';
+                    div.innerHTML = `<span class="opt-name">${opt.name}</span><span class="opt-price">$${opt.price.toLocaleString()}</span>`;
+                    div.onclick = () => {
+                        document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+                        div.classList.add('selected');
+                        selectedVariantObject = opt;
+                    };
+                    container.appendChild(div);
+                }
+            });
+            if(container.children.length === 0) {
+                 container.innerHTML = '<div style="padding:15px; text-align:center; color:#ef4444;">Todas las variantes están agotadas.</div>';
+            }
+        };
+
+        window.filterModalOptions = () => {
+            const term = document.getElementById('modal-option-search').value.toLowerCase();
+            const items = document.querySelectorAll('.option-item');
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                item.style.display = text.includes(term) ? 'flex' : 'none';
+            });
+        };
+
         window.confirmOptionSelection = () => {
-            const select = document.getElementById('product-option-select');
-            const selectedName = select.value;
-            if (!selectedName || !pendingProduct) return;
-            const selectedOption = pendingProduct.options.find(o => o.name === selectedName);
-            if(!selectedOption) return;
+            if (!selectedVariantObject || !pendingProduct) {
+                showToast('Por favor selecciona una variante', 'info');
+                return;
+            }
             const cartItem = { 
                 ...pendingProduct, 
-                selectedOption: selectedName,
-                variantId: selectedOption.name,
-                price: selectedOption.price,
-                originalStockRef: { productId: pendingProduct.id, optionName: selectedName }
+                selectedOption: selectedVariantObject.name,
+                variantId: selectedVariantObject.name,
+                price: selectedVariantObject.price,
+                originalStockRef: { productId: pendingProduct.id, optionName: selectedVariantObject.name }
             };
             cart.push(cartItem);
             document.getElementById('cart-count').innerText = cart.length;
-            showToast(`Agregado: ${pendingProduct.name} (${selectedName})`, 'success');
+            showToast(`Agregado: ${pendingProduct.name} (${selectedVariantObject.name})`, 'success');
             pendingProduct = null;
+            selectedVariantObject = null;
             window.closeModals();
         };
 
@@ -1000,7 +1128,6 @@
             const tbody = document.querySelector('#products-table tbody');
             tbody.innerHTML = '';
             if(!rawData) return;
-            
             for (let key in rawData) {
                 if (rawData.hasOwnProperty(key)) {
                     const p = rawData[key];
@@ -1047,9 +1174,7 @@
             const price = document.getElementById('new-prod-price').value;
             const stock = document.getElementById('new-prod-stock').value;
             const icon = document.getElementById('new-prod-icon').value || 'fa-box';
-            
             if(!name || !price) return showToast('Campos requeridos', 'error');
-            
             const variantRows = document.querySelectorAll('#variants-list .variant-row');
             let optionsArr = [];
             variantRows.forEach(row => {
@@ -1060,10 +1185,8 @@
                     optionsArr.push({ name: vName, price: parseInt(vPrice), stock: parseInt(vStock || 0) });
                 }
             });
-            
             const newRef = push(ref(db, 'carkkis_products'));
             set(newRef, { id: Date.now(), name, manufacturer, price: parseInt(price), stock: parseInt(stock || 10), icon, options: optionsArr });
-            
             showToast('Producto agregado', 'success');
             document.getElementById('new-prod-name').value = ''; 
             document.getElementById('new-prod-manufacturer').value = ''; 
@@ -1079,13 +1202,11 @@
             const products = snap.val();
             const currentProduct = products[firebaseKey];
             if (!currentProduct) return;
-
             const updates = {};
             updates[`carkkis_products/${firebaseKey}/name`] = document.getElementById(`prod-name-${id}`).value;
             updates[`carkkis_products/${firebaseKey}/price`] = parseInt(document.getElementById(`prod-price-${id}`).value);
             updates[`carkkis_products/${firebaseKey}/stock`] = parseInt(document.getElementById(`prod-stock-${id}`).value);
             if(currentProduct.manufacturer) updates[`carkkis_products/${firebaseKey}/manufacturer`] = currentProduct.manufacturer;
-            
             let rawText = document.getElementById(`prod-options-${id}`).value || "";
             let optionsStr = rawText.replace(/\n/g, ',').replace(/,\s*,/g, ',').trim();
             let optionsArr = [];
@@ -1276,7 +1397,8 @@
             const newRef = push(ref(db, 'carkkis_bookings'));
             const finalName = currentUser ? currentUser.name : clientName;
             const finalPhone = currentUser ? currentUser.phone : clientPhone;
-            await set(newRef, { id: newRef.key, date: d.toLocaleDateString(), time: timeVal, client: finalName, phone: finalPhone, plate: plate, service: service, issueType: issueType, status: 'Pendiente' });
+            // Timestamp para ordenamiento y cálculos
+            await set(newRef, { id: newRef.key, date: d.toLocaleDateString(), time: timeVal, client: finalName, phone: finalPhone, plate: plate, service: service, issueType: issueType, status: 'Pendiente', timestamp: d.getTime() });
             window.closeModals(); showToast('Cita agendada', 'success'); e.target.reset();
         };
         window.openBookingModal = async () => {
@@ -1334,7 +1456,9 @@
                 const el = document.getElementById(`view-${t}`); if(el) el.classList.add('hidden');
             });
             const viewEl = document.getElementById(`view-${tab}`); if(viewEl) viewEl.classList.remove('hidden');
+            
             if(tab === 'analytics') loadAnalytics();
+            if(tab === 'profits') loadProfits(allOrdersCache, allBookingsCache); // Recalcular al entrar a la pestaña
         };
         window.deleteItem = async (path, key) => { if(!confirm('¿Eliminar?')) return; await remove(ref(db, `${path}/${key}`)); showToast('Eliminado', 'info'); };
         window.addNewPayment = () => {
@@ -1348,24 +1472,58 @@
         window.openModal = (id) => { document.getElementById(id).style.display = 'flex'; };
         window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
         function loadAnalytics() { document.querySelector('#analytics-table tbody').innerHTML = '<tr><td colspan="3">Calculando...</td></tr>'; }
-        function loadProfits(orders) {
-            const now = new Date(); let total = 0, count = 0;
+        
+        // ==========================================
+        // FUNCIÓN ACTUALIZADA: loadProfits (Citas + Ventas)
+        // ==========================================
+        function loadProfits(orders, bookings) {
+            if(!orders) orders = [];
+            if(!bookings) bookings = [];
+            if(!allServicesCache) allServicesCache = [];
+
+            const now = new Date();
+            let total = 0, count = 0;
+            const tbody = document.querySelector('#profits-table tbody');
+            tbody.innerHTML = '';
+
+            // 1. PROCESAR VENTAS ONLINE (ORDERS)
             orders.forEach(o => {
                 const d = new Date(o.timestamp);
                 if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-                    if(o.status === 'Confirmado') { total += (o.total || 0); count++; }
+                    if(o.status === 'Confirmado') { 
+                        total += (o.total || 0); 
+                        count++; 
+                        let cls = 'status-confirmed';
+                        tbody.innerHTML += `<tr><td><i class="fas fa-shopping-bag" style="color:var(--azul-acento)"></i> Venta</td><td>${o.dateStr}</td><td>${o.clientName}</td><td><span class="status-badge ${cls}">${o.status}</span></td><td>$${(o.total||0).toLocaleString()}</td></tr>`;
+                    }
                 }
             });
-            document.getElementById('monthly-profit').innerText = '$' + total.toLocaleString(); document.getElementById('monthly-orders').innerText = count;
-            const tbody = document.querySelector('#profits-table tbody'); tbody.innerHTML = '';
-            orders.forEach(o => {
-                const d = new Date(o.timestamp);
+
+            // 2. PROCESAR CITAS (BOOKINGS) - VINCULACIÓN CON GANANCIAS
+            bookings.forEach(b => {
+                const d = new Date(b.timestamp);
                 if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-                    let cls = o.status === 'Confirmado' ? 'status-confirmed' : 'status-pending';
-                    tbody.innerHTML += `<tr><td>${o.dateStr}</td><td>${o.clientName}</td><td><span class="status-badge ${cls}">${o.status}</span></td><td>$${(o.total||0).toLocaleString()}</td></tr>`;
+                    if(b.status === 'Confirmado') {
+                        // Buscar el precio del servicio en la lista de servicios
+                        const serv = allServicesCache.find(s => s.name === b.service);
+                        const price = serv ? serv.price : 0;
+                        
+                        total += price;
+                        count++;
+                        let cls = 'status-confirmed';
+                        // Distinguir visualmente en la tabla que es una Cita
+                        tbody.innerHTML += `<tr><td><i class="fas fa-calendar-check" style="color:var(--exito)"></i> Cita</td><td>${b.date}</td><td>${b.client}</td><td><span class="status-badge ${cls}">${b.status}</span></td><td>$${price.toLocaleString()}</td></tr>`;
+                    }
                 }
             });
+            
+            // Ordenar tabla por fecha (opcional, aquí se mezclan ventas y citas por orden de llegada)
+            // Para este ejemplo, mantenemos el orden: Ventas primero, luego Citas.
+            
+            document.getElementById('monthly-profit').innerText = '$' + total.toLocaleString(); 
+            document.getElementById('monthly-transactions').innerText = count;
         }
+
         function showToast(msg, type) {
             const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = 'toast';
             const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
@@ -1373,7 +1531,15 @@
             t.style.borderLeftColor = color; t.innerHTML = `<i class="fas ${icon}" style="color:${color}"></i> <span>${msg}</span>`;
             c.appendChild(t); setTimeout(() => t.remove(), 3000);
         }
-        window.onload = () => { seedData(); setupListeners(); };
+        window.onload = () => { 
+            seedData(); 
+            setupListeners(); 
+            
+            // Listeners de búsqueda
+            document.getElementById('client-search').addEventListener('input', window.filterClientProducts);
+            document.getElementById('admin-search-excel').addEventListener('input', window.filterAdminInventory);
+            document.getElementById('modal-option-search').addEventListener('input', window.filterModalOptions);
+        };
         window.onclick = (e) => { if(e.target.classList.contains('modal')) window.closeModals(); };
     </script>
 </body>
